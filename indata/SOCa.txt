@@ -1,0 +1,51 @@
+Standard of care
+	Present at hospital
+		TB screening
+			Presumptive TB at hospital
+				Bacteriological assessment available
+					Clinical & or bacteriological assessment 
+						TB diagnosed (bacteriological)
+						TB diagnosed (clinical)
+						No TB diagnosed
+							Reassessment
+								Clinical & or bacteriological assessment* 
+									TB diagnosed (bacteriological)
+									TB diagnosed (clinical)
+									No TB diagnosed 
+							No reassessment
+				Bacteriological assessment unavailable
+					Clinical assessment
+						TB diagnosed (clinical)
+						No TB diagnosed
+							Reassessment
+								Clinical & or bacteriological assessment* 
+									TB diagnosed (clinical)
+									No TB diagnosed 
+							No reassessment
+			Not presumptive TB
+		Not screened
+	Present at PHC
+		TB screening
+			Presumptive TB at PHC
+				Bacteriological assessment available
+					Clinical & or bacteriological assessment 
+						TB diagnosed (bacteriological)
+						TB diagnosed (clinical)
+						No TB diagnosed
+							Reassessment
+								Clinical & or bacteriological assessment* 
+									TB diagnosed (bacteriological)
+									TB diagnosed (clinical)
+									No TB diagnosed 
+							No reassessment
+				Bacteriological assessment unavailable
+					Clinical assessment
+						TB diagnosed (clinical)
+						No TB diagnosed
+							Reassessment
+								Clinical & or bacteriological assessment* 
+									TB diagnosed (clinical)
+									No TB diagnosed 
+							No reassessment
+			Not presumptive TB
+		Not screened

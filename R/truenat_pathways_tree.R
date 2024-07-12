@@ -79,8 +79,11 @@ AddOutcomes <- function(D){
   MergeByName(D,notbtxo,'No TB diagnosed',leavesonly = TRUE) #NOTE need to restrict to leaves, although not necessary
   MergeByName(D,notbtxo,'Does not reach hospital',leavesonly = TRUE) #NOTE need to restrict to leaves, although not necessary
   MergeByName(D,notbtxo,'No reassessment',leavesonly = TRUE) #NOTE need to restrict to leaves, although not necessary
+  MergeByName(D,notbtxo,'No assessment',leavesonly = TRUE) #NOTE need to restrict to leaves, although not necessary
   MergeByName(D, tbtxb,'TB diagnosed (bacteriological)')
   MergeByName(D,tbtxc,'TB diagnosed (clinical)')
+  MergeByName(D,notbtxo,'Not screened',leavesonly = TRUE)
+  MergeByName(D,notbtxo,'Not presumptive TB',leavesonly = TRUE)
   
   ## ===========  other counters
   ## check
@@ -116,8 +119,8 @@ AddOutcomes <- function(D){
 }
 
 ## names of stage counters
-stagecounters <- c('DH.presented','DH.tested','DH.treated',
-                   'PHC.presented','PHC.tested','PHC.treated')
+stagecounters <- c('DH.presumptive','DH.evaluated','DH.treated',
+                   'PHC.presumptive','PHC.evaluated','PHC.treated')
 scc <- paste0(stagecounters,'.cost')
 labdat <- c('p','cost',stagecounters,scc)
 
@@ -129,10 +132,10 @@ print(SOC)
 SOC <- AddOutcomes(SOC)
 
 tree2file(SOC,filename = here('indata/CSV/SOCb.csv'),
-          'p','cost','deaths','lives','refers','tested','dxc','dxb','att',
+          'p','cost','deaths','lives','refers','dxc','dxb','att',
           'check',
-          'DH.presented','DH.tested','DH.treated',
-          'PHC.presented','PHC.tested','PHC.treated')
+          'DH.presumptive','DH.evaluated','DH.treated',
+          'PHC.presumptive','PHC.evaluated','PHC.treated')
 
 ## create version with probs/costs
 fn <- here('indata/CSV/SOCb1.csv')
@@ -144,10 +147,10 @@ if(file.exists(fn)){
   LabelFromData(SOC,labz[,..labdat]) #add label data
   ## save out
   tree2file(SOC,filename = here('indata/CSV/SOCb2.csv'),
-            'p','cost','deaths','lives','refers','tested','dxc','dxb','att',
+            'p','cost','deaths','lives','refers','dxc','dxb','att',
             'check',
-            'DH.presented','DH.tested','DH.treated',
-            'PHC.presented','PHC.tested','PHC.treated')
+            'DH.presumptive','DH.evaluated','DH.treated',
+            'PHC.presumptive','PHC.evaluated','PHC.treated')
 }
 
 ## === INT
@@ -155,10 +158,10 @@ INT <- Clone(SOC)
 INT$name <- 'Intervention'
 print(INT)
 tree2file(INT,filename = here('indata/CSV/INT.csv'),
-          'p','cost','deaths','lives','refers','tested','dxc','dxb','att',
+          'p','cost','deaths','lives','refers','dxc','dxb','att',
           'check',
-          'DH.presented','DH.tested','DH.treated',
-          'PHC.presented','PHC.tested','PHC.treated')
+          'DH.presumptive','DH.evaluated','DH.treated',
+          'PHC.presumptive','PHC.evaluated','PHC.treated')
 
 ## create version with probs/costs
 fn <- here('indata/CSV/INT1.csv')
@@ -167,19 +170,19 @@ if(file.exists(fn)){
   labz <- fread(fn)
   labz$p <- gsub("p\\.rr","prr",labz$p) #NOTE fixing typo
   labz[,(scc):=lapply(.SD,function(x)paste(x,cost,sep='*')),.SDcols=stagecounters] #costs by stage
-  LabelFromData(SOC,labz[,..labdat]) #add label data
+  LabelFromData(INT,labz[,..labdat]) #add label data
   ## save out
-  tree2file(SOC,filename = here('indata/CSV/INT2.csv'),
-            'p','cost','deaths','lives','refers','tested','dxc','dxb','att',
+  tree2file(INT,filename = here('indata/CSV/INT2.csv'),
+            'p','cost','deaths','lives','refers','dxc','dxb','att',
             'check',
-            'DH.presented','DH.tested','DH.treated',
-            'PHC.presented','PHC.tested','PHC.treated')
+            'DH.presumptive','DH.evaluated','DH.treated',
+            'PHC.presumptive','PHC.evaluated','PHC.treated')
 }
 
 
 ## make functions
 fnmz <- c('check','cost','deaths','att',
-          'lives','refers','tested','dxc','dxb',
+          'lives','refers','dxc','dxb',
           stagecounters,
           scc)
 
@@ -203,7 +206,7 @@ runallfuns <- function(D,arm='all'){
     cat('Running functions for INT:\n')
     for(nm in names(INT.F)){
       snm <- gsub('fun','',nm)
-      snma <- paste0(snm,'.INT')
+      snma <- paste0(snm,'.int')
       D[[snma]] <- INT.F[[nm]](D)
       cat('...',snm,' run...\n')
       done <- TRUE
@@ -214,19 +217,19 @@ runallfuns <- function(D,arm='all'){
 }
 
 ## --- CHECKS
-showAllParmz <- function(TREE){
-  B <- showParmz(TREE)
-  ## get calx
-  cx <- B$calcs
-  cx <- gsub("\\*|\\+|-|\\/|\\(|\\)"," ",cx)
-  cx <- paste(cx,collapse=" ")
-  cx <- strsplit(cx,split=" ")[[1]]
-  cx <- cx[cx!=""]
-  cx <- cx[cx!="1"]
-  ## get non calcs
-  cx <- c(cx,B$vars)
-  unique(cx)
-}
+# showAllParmz <- function(TREE){
+#   B <- showParmz(TREE)
+#   ## get calx
+#   cx <- B$calcs
+#   cx <- gsub("\\*|\\+|-|\\/|\\(|\\)"," ",cx)
+#   cx <- paste(cx,collapse=" ")
+#   cx <- strsplit(cx,split=" ")[[1]]
+#   cx <- cx[cx!=""]
+#   cx <- cx[cx!="1"]
+#   ## get non calcs
+#   cx <- c(cx,B$vars)
+#   unique(cx)
+# }
 
 makeTestData <- function(ncheck,vnames){
   A <- data.table(vnames,value=runif(length(vnames)))
@@ -252,3 +255,11 @@ A <- makeTestData(50,vrz)
 INT.F$checkfun(A) #NOTE OK
 SOC.F$checkfun(A) #NOTE OK
 
+## full graph out
+# plotter(SOC)
+# plotter(INT)
+# ## full graph out
+# DiagrammeR::export_graph(ToDiagrammeRGraph(SOC),
+#                          file_name=here('plots/SOC.pdf'))
+# DiagrammeR::export_graph(ToDiagrammeRGraph(INT),
+#                          file_name=here('plots/INT.pdf'))
