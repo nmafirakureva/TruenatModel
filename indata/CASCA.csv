@@ -1,0 +1,5 @@
+"facility_type","metric","age","frac","parm"
+"Hospital","Target population","0-4",0.539638294889451,"dh.fracY"
+"Hospital","Target population","5-14",0.460361705110548,"dh.fracO"
+"PHC","Target population","0-4",0.514384468304162,"phc.fracY"
+"PHC","Target population","5-14",0.485615531695838,"phc.fracO"

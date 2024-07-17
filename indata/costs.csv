@@ -1,0 +1,10 @@
+parm,cost.m,cost.sd
+cost.dh.examCXR,2.04,2.2
+cost.dh.rsATT,333.13,153.72
+cost.dh.rrATT,400.33,150.66
+cost.Xpert,22.24,2.22
+cost.Truenat,19.05,1.05
+cost.phc.examCXR,2.04,2.2
+cost.phc.rsATT,333.13,153.72
+cost.phc.refer,2.87,2.52
+cost.phc.rrATT,400.33,150.66

@@ -1,0 +1,144 @@
+Standard of care
+	Present at hospital
+		TB screening
+			Presumptive TB at hospital
+				Clinical exam only
+					TB diagnosed (clinical)
+					No TB diagnosed
+						Reassessment
+							Clinical & or bacteriological assessment* 
+								TB diagnosed (bacteriological)
+								TB diagnosed (clinical)
+								No TB diagnosed 
+						No reassessment
+				Clinical exam + Xpert Ultra
+					TB diagnosed (bacteriological)
+					TB diagnosed (clinical)
+					No TB diagnosed
+						Reassessment
+							Clinical & or bacteriological assessment* 
+								TB diagnosed (bacteriological)
+								TB diagnosed (clinical)
+								No TB diagnosed 
+						No reassessment
+				Clinical exam + TrueNat
+					TB diagnosed (bacteriological)
+					TB diagnosed (clinical)
+					No TB diagnosed
+						Reassessment
+							Clinical & or bacteriological assessment* 
+								TB diagnosed (bacteriological)
+								TB diagnosed (clinical)
+								No TB diagnosed 
+						No reassessment
+			Not presumptive TB
+		Not screened
+	Present at PHC
+		TB screening
+			Presumptive TB at PHC
+				Clinical exam only
+					TB diagnosed (clinical)
+					No TB diagnosed
+						Refer to DH
+							Clinical exam only
+								TB diagnosed (clinical)
+								No TB diagnosed
+									Reassessment
+										Clinical & or bacteriological assessment* 
+											TB diagnosed (bacteriological)
+											TB diagnosed (clinical)
+											No TB diagnosed 
+									No reassessment
+							Clinical exam + Xpert Ultra
+								TB diagnosed (bacteriological)
+								TB diagnosed (clinical)
+								No TB diagnosed
+									Reassessment
+										Clinical & or bacteriological assessment* 
+											TB diagnosed (bacteriological)
+											TB diagnosed (clinical)
+											No TB diagnosed 
+									No reassessment
+							Clinical exam + TrueNat
+								TB diagnosed (bacteriological)
+								TB diagnosed (clinical)
+								No TB diagnosed
+									Reassessment
+										Clinical & or bacteriological assessment* 
+											TB diagnosed (bacteriological)
+											TB diagnosed (clinical)
+											No TB diagnosed 
+									No reassessment
+						Does not reach hospital
+				Clinical exam + Xpert Ultra
+					TB diagnosed (bacteriological)
+					TB diagnosed (clinical)
+					No TB diagnosed
+						Refer to DH
+							Clinical exam only
+								TB diagnosed (clinical)
+								No TB diagnosed
+									Reassessment
+										Clinical & or bacteriological assessment* 
+											TB diagnosed (bacteriological)
+											TB diagnosed (clinical)
+											No TB diagnosed 
+									No reassessment
+							Clinical exam + Xpert Ultra
+								TB diagnosed (bacteriological)
+								TB diagnosed (clinical)
+								No TB diagnosed
+									Reassessment
+										Clinical & or bacteriological assessment* 
+											TB diagnosed (bacteriological)
+											TB diagnosed (clinical)
+											No TB diagnosed 
+									No reassessment
+							Clinical exam + TrueNat
+								TB diagnosed (bacteriological)
+								TB diagnosed (clinical)
+								No TB diagnosed
+									Reassessment
+										Clinical & or bacteriological assessment* 
+											TB diagnosed (bacteriological)
+											TB diagnosed (clinical)
+											No TB diagnosed 
+									No reassessment
+						Does not reach hospital
+				Clinical exam + TrueNat
+					TB diagnosed (bacteriological)
+					TB diagnosed (clinical)
+					No TB diagnosed
+						Refer to DH
+							Clinical exam only
+								TB diagnosed (clinical)
+								No TB diagnosed
+									Reassessment
+										Clinical & or bacteriological assessment* 
+											TB diagnosed (bacteriological)
+											TB diagnosed (clinical)
+											No TB diagnosed 
+									No reassessment
+							Clinical exam + Xpert Ultra
+								TB diagnosed (bacteriological)
+								TB diagnosed (clinical)
+								No TB diagnosed
+									Reassessment
+										Clinical & or bacteriological assessment* 
+											TB diagnosed (bacteriological)
+											TB diagnosed (clinical)
+											No TB diagnosed 
+									No reassessment
+							Clinical exam + TrueNat
+								TB diagnosed (bacteriological)
+								TB diagnosed (clinical)
+								No TB diagnosed
+									Reassessment
+										Clinical & or bacteriological assessment* 
+											TB diagnosed (bacteriological)
+											TB diagnosed (clinical)
+											No TB diagnosed 
+									No reassessment
+						Does not reach hospital
+			Not presumptive TB
+		Not screened
