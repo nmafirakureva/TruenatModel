@@ -122,7 +122,7 @@ AddOutcomes <- function(D){
 stagecounters <- c('DH.presumptive','DH.evaluated','DH.treated',
                    'PHC.presumptive','PHC.evaluated','PHC.treated')
 scc <- paste0(stagecounters,'.cost')
-labdat <- c('p','cost',stagecounters,scc)
+labdat <- c('p','cost', 'att', 'attend', stagecounters,scc)
 
 ## === SOC
 SOC <- MSorg2tree(here('indata/SOCc.txt'))
@@ -132,7 +132,7 @@ print(SOC)
 SOC <- AddOutcomes(SOC)
 
 tree2file(SOC,filename = here('indata/CSV/SOCc.csv'),
-          'p','cost','deaths','lives','refers','dxc','dxb','att',
+          'p','cost','deaths','lives','refers','dxc','dxb','att', 'attend',
           'check',
           'DH.presumptive','DH.evaluated','DH.treated',
           'PHC.presumptive','PHC.evaluated','PHC.treated')
@@ -147,18 +147,36 @@ if(file.exists(fn)){
   LabelFromData(SOC,labz[,..labdat]) #add label data
   ## save out
   tree2file(SOC,filename = here('indata/CSV/SOCc2.csv'),
-            'p','cost','deaths','lives','refers','dxc','dxb','att',
+            'p','cost','deaths','lives','refers','dxc','dxb','att', 'attend',
             'check',
             'DH.presumptive','DH.evaluated','DH.treated',
             'PHC.presumptive','PHC.evaluated','PHC.treated')
 }
+
+## NOTE this would ideally be moved up into the workflow above
+## add a notx variable = no ATT
+leaves <- as.integer(SOC$Get('check')) #indicator for being a leaf
+sum(leaves) == SOC$leafCount
+notx <- as.integer((!SOC$Get('attend'))) * leaves #only 1 on leaves
+
+SOC$Set(notx = 0)
+SOC$Set(notx = notx)
+
+## this gives us 3 outcome functions: tpt,att, notx, which are exhaustive
+labz[,sum(attend==1)] + sum(notx) == sum(leaves) #only 1 on leaves
+
+##  & exclusive:
+labz[attend > 1]
+labz[,table(attend)]
+labz[,table(notx)]
+labz[,table(att,notx)]
 
 ## === INT
 INT <- Clone(SOC)
 INT$name <- 'Intervention'
 print(INT)
 tree2file(INT,filename = here('indata/CSV/INTc.csv'),
-          'p','cost','deaths','lives','refers','dxc','dxb','att',
+          'p','cost','deaths','lives','refers','dxc','dxb','att', 'attend',
           'check',
           'DH.presumptive','DH.evaluated','DH.treated',
           'PHC.presumptive','PHC.evaluated','PHC.treated')
@@ -173,21 +191,72 @@ if(file.exists(fn)){
   LabelFromData(INT,labz[,..labdat]) #add label data
   ## save out
   tree2file(INT,filename = here('indata/CSV/INTc2.csv'),
-            'p','cost','deaths','lives','refers','dxc','dxb','att',
+            'p','cost','deaths','lives','refers','dxc','dxb','att', 'attend',
             'check',
             'DH.presumptive','DH.evaluated','DH.treated',
             'PHC.presumptive','PHC.evaluated','PHC.treated')
 }
 
+## NOTE this would ideally be moved up into the workflow above
+## add a notx variable = no ATT
+leaves <- as.integer(INT$Get('check')) #indicator for being a leaf
+sum(leaves) == INT$leafCount
+notx <- as.integer((!INT$Get('attend'))) * leaves #only 1 on leaves
+
+INT$Set(notx = 0)
+INT$Set(notx = notx)
+
+## this gives us 3 outcome functions: tpt,att, notx, which are exhaustive
+labz[,sum(attend==1)] + sum(notx) == sum(leaves) #only 1 on leaves
+
+##  & exclusive:
+labz[attend > 1]
+labz[,table(attend)]
+labz[,table(notx)]
+labz[,table(att,notx)]
 
 ## make functions
-fnmz <- c('check','cost','deaths','att',
+fnmz <- c('check','cost','deaths','att','attend','notx',
           'lives','refers','dxc','dxb',
           stagecounters,
           scc)
 
+## full tree
 SOC.F <- makeTfuns(SOC,fnmz)
 INT.F <- makeTfuns(INT,fnmz)
+
+## NOTE making pruned trees conditioned on outcomes (subtrees ending variable > 0)
+SOC.att <- PruneByOutcome(SOC,'attend')
+SOC.notx <- PruneByOutcome(SOC, "notx")
+INT.att <- PruneByOutcome(INT, "attend")
+INT.notx <- PruneByOutcome(INT, "notx")
+
+## checking...
+leaves <- as.integer(SOC.notx$Get("check")) # indicator for being a leaf
+sum(leaves) == SOC.notx$leafCount
+
+notx <- as.integer(SOC.notx$Get("notx"))
+attend <- as.integer(SOC.notx$Get("attend"))
+
+sum(notx+attend)==sum(leaves)  #each leaf has outcome
+sum((notx + attend)*!leaves) #only on leaves
+which(leaves == 1 & (notx + attend) == 0) #
+
+tree2file(SOC.att,
+          filename = here("indata/CSV/SOC.att.csv"),
+          "p", "cost","notx", "attend", "check"
+)
+
+tree2file(SOC.notx,
+          filename = here("indata/CSV/SOC.notx.csv"),
+          "p","cost","notx", "attend", "check"
+)
+
+## restricted trees:
+SOC.att.F <- makeTfuns(SOC.att,fnmz)
+SOC.notx.F <- makeTfuns(SOC.notx,fnmz)
+INT.att.F <- makeTfuns(INT.att,fnmz)
+INT.notx.F <- makeTfuns(INT.notx,fnmz)
 
 ## running all function
 runallfuns <- function(D,arm='all'){

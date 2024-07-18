@@ -150,14 +150,12 @@ D <- merge(D0,C,by=c('id'),all.x=TRUE)       # merge into PSA (differentiated D 
 ## compute other parameters (adds by side-effect)
 MakeTreeParms(D,P)
 
-
 # names(D)[grepl('cost', names(D))]
 
 ## checks
 D[,sum(value),by=.(id)] #CHECK
 D[,sum(value),by=.(id, age)] #CHECK
 D[,sum(value),by=.(id,age, tb)] #CHECK
-
 
 ## check for leaks
 head(SOC.F$checkfun(D)) #SOC arm
@@ -172,23 +170,11 @@ D <- runallfuns(D,arm=arms)                      #appends anwers
 ## restricted trees:
 D[['soc_att_check']] <- SOC.att.F$checkfun(D)
 D[['soc_att_cost']] <- SOC.att.F$costfun(D)
-D[['soc_att_ppd']] <- SOC.att.F$cost.ppdfun(D)
-D[['soc_att_nhs']] <- SOC.att.F$cost.nhsfun(D)
-D[['soc_tpt_check']] <- SOC.tpt.F$checkfun(D)
-D[['soc_tpt_cost']] <- SOC.tpt.F$costfun(D)
-D[['soc_tpt_ppd']] <- SOC.tpt.F$cost.ppdfun(D)
-D[['soc_tpt_nhs']] <- SOC.tpt.F$cost.nhsfun(D)
 D[['soc_notx_check']] <- SOC.notx.F$checkfun(D)
 D[['soc_notx_cost']] <- SOC.notx.F$costfun(D)
 
 D[['int_att_check']] <- INT.att.F$checkfun(D)
 D[['int_att_cost']] <- INT.att.F$costfun(D)
-D[['int_att_ppd']] <- INT.att.F$cost.ppdfun(D)
-D[['int_att_nhs']] <- INT.att.F$cost.nhsfun(D)
-D[['int_tpt_check']] <- INT.tpt.F$checkfun(D)
-D[['int_tpt_cost']] <- INT.tpt.F$costfun(D)
-D[['int_tpt_ppd']] <- INT.tpt.F$cost.ppdfun(D)
-D[['int_tpt_nhs']] <- INT.att.F$cost.nhsfun(D)
 D[['int_notx_check']] <- INT.notx.F$checkfun(D)
 D[['int_notx_cost']] <- INT.notx.F$costfun(D)
 
@@ -199,12 +185,10 @@ head(D[, attend.int])
 ## NOTE OK
 all(D[, attend.int] == D[, int_att_check])
 all(D[, attend.soc] == D[, soc_att_check])
-all(D[, tptend.int] == D[, int_tpt_check])
-all(D[, tptend.soc] == D[, soc_tpt_check])
+
 ## NOTE confusingly there is also a notxend variable, which is different
 all(D[, notx.int] == D[, int_notx_check])
 all(D[, notx.soc] == D[, soc_notx_check])
-
 
 D[,table(tb)]
 
@@ -212,34 +196,22 @@ D[,table(tb)]
 DR <- D[,.(id,tb,
            soc_att_check,
            soc_att_cost,
-           soc_att_ppdcost=soc_att_ppd/soc_att_cost,
-           soc_tpt_check,
-           soc_tpt_cost,
-           soc_tpt_ppdcost=soc_tpt_ppd/soc_tpt_cost,
            soc_notx_check,
            soc_notx_cost,
            int_att_check,
            int_att_cost,
-           int_att_ppdcost=int_att_ppd/int_att_cost,
-           int_tpt_check,
-           int_tpt_cost,
-           int_tpt_ppdcost=int_tpt_ppd/int_tpt_cost,
            int_notx_check,
            int_notx_cost
            )]
 
 ## condition costs on outcome
 DR[,c('soc_att_cost',
-      'soc_tpt_cost',
       'soc_notx_cost',
       'int_att_cost',
-      'int_tpt_cost',
       'int_notx_cost'):=.(
         soc_att_cost/soc_att_check,
-        soc_tpt_cost/soc_tpt_check,
         soc_notx_cost/soc_notx_check,
         int_att_cost/int_att_check,
-        int_tpt_cost/int_tpt_check,
         int_notx_cost/int_notx_check
       )]
 
@@ -253,29 +225,147 @@ options(scipen=999)
 (DRS <- dcast(data=DRS,formula=arm+quantity+outcome~tb,value.var='value'))
 fwrite(DRS,file=here('outdata/DRS.csv'))
 
-# D[tb=='noTB',.(soc.prop.prev.tb.dx,
-#     soc.prop.no.prev.tb.dx.symp,
-#     soc.prop.no.prev.tb.dx.symp.gp.assess,
-#     soc.prop.no.prev.tb.dx.symp.tb.suspicion,
-#     soc.prop.no.prev.tb.dx.symp.nhs.referral,
-#     soc.prop.no.prev.tb.dx.symp.tb.dx,
-#     soc.prop.starting.att,
-#     soc.prop.completing.att,
-#     sens.any.abn.xray,spec.any.abn.xray)]
+(dxb <- names(D)[grepl('dxb|dxc|att.soc|att.int',names(D))])
+summary(D[tb=='TB',..dxb])
+summary(D[tb=='noTB',..dxb])
 
-## soc.prop.no.prev.tb.dx.symp.tb.dx??
+## Cost-effectiveness analysis
+## --- run over different countries
+cnmz <- names(C)
+cnmz <- cnmz[cnmz!='id']
 
-## cost of getting ATT (from CSV output)
-D[,mean((pDSTB*dstb.visits*(cost.dstb.opd.visit + cost.prison.escort) + 
-           (1-pDSTB)*mdrtb.visits*(cost.mdrtb.opd.visit + cost.prison.escort)) + 
-          (pDSTB*DurDSTB*cost.dsatt.drugs + (1-pDSTB)*DurMDRTB*cost.mdratt.drugs) + cost.dots*(pDSTB*DurDSTB + (1-pDSTB)*DurMDRTB) +
-          cost.inpatient),
-  by=tb]
-D[,mean(IncompDurDSTB/DurDSTB*(pDSTB*dstb.visits*(cost.dstb.opd.visit + cost.prison.escort) + pDSTB*DurDSTB*(cost.dsatt.drugs + cost.dots)) + 
-          IncompDurMDRTB/DurMDRTB*((1-pDSTB)*mdrtb.visits*(cost.mdrtb.opd.visits + cost.prison.escort)  + (1-pDSTB)*DurMDRTB*(cost.mdratt.drugs + cost.dots)) + 
-          cost.inpatient
-),by=tb]
-D[,mean(durTPT*(cost.ltbi.drugs + cost.dots)),by=tb]
-D[,mean((durTPT*(cost.ltbi.drugs + cost.dots) + TPT.visits*(cost.tpt.opd.visit + cost.prison.escort))),by=tb]
-D[,mean((IncompDurTPT*(durTPT*(cost.ltbi.drugs + cost.dots) + TPT.visits*(cost.tpt.opd.visit + cost.prison.escort)))),by=tb] # BUG fixed
-D[,mean((IncompDurTPT/durTPT*(durTPT*(cost.ltbi.drugs + cost.dots) + TPT.visits*(cost.tpt.opd.visit + cost.prison.escort)))),by=tb]
+names(labz)[grepl('cost$',names(labz))]
+costsbystg <- c('DH.presumptive.cost.soc','DH.evaluated.cost.soc','DH.treated.cost.soc',
+                'DH.presumptive.cost.int','DH.evaluated.cost.int','DH.treated.cost.int',
+                'PHC.presumptive.cost.soc','PHC.evaluated.cost.soc','PHC.treated.cost.soc',
+                'PHC.presumptive.cost.int','PHC.evaluated.cost.int','PHC.treated.cost.int')
+toget <- c('id',
+           'cost.soc','cost.int',
+           costsbystg,
+           'att.soc','att.int',
+           'deaths.soc','deaths.int',
+           'LYS','LYS0','value'
+)
+notwt <- c('id','LYS','LYS0','value') #variables not to weight against value
+lyarm <- c('LYL.soc','LYL.int')
+lyarm <- c(lyarm,gsub('\\.','0\\.',lyarm)) #include undiscounted
+tosum <- c(setdiff(toget,notwt),lyarm)
+## heuristic to scale top value for thresholds:
+heur <- c('id','value','deaths.int','deaths.soc')
+out <- D[,..heur]
+out <- out[,lapply(.SD,function(x) sum(x*value)),.SDcols=c('deaths.int','deaths.soc'),by=id] #sum against popn
+## topl <- 0.25/out[,mean(deaths.soc-deaths.iph)]
+topl <- 500 #100
+lz <- seq(from = 0,to=topl,length.out = 1000) #threshold vector for CEACs
+## staged costs by arm
+soc.sc <- grep('soc',costsbystg,value=TRUE); psoc.sc <- paste0('perATT.',soc.sc)
+int.sc <- grep('int',costsbystg,value=TRUE); pint.sc <- paste0('perATT.',int.sc)
+
+
+## containers & loop
+allout <- allpout <- allscout <- list() #tabular outputs
+ceacl <- NMB <- list()             #CEAC outputs etc
+
+## cn <- isoz[1]
+for(cn in isoz){
+  cat('running model for:',cn,'\n')
+  ## --- costs
+  ## drop previous costs
+  D[,c(cnmz):=NULL]
+  ## add cost data
+  C <- MakeCostData(allcosts,nreps) #make cost PSA
+  D <- merge(D,C,by='id',all.x = TRUE)        #merge into PSA
+  ## --- DALYs
+  ## drop any that are there
+  if('LYS' %in% names(D)) D[,c('LYS','LYS0'):=NULL]
+  D <- merge(D,LYKc[,.(age,LYS,LYS0)],by='age',all.x = TRUE)        #merge into PSA
+  ## --- run model (quietly)
+  invisible(capture.output(D <- runallfuns(D,arm=arms)))
+  ## --- grather outcomes
+  out <- D[,..toget]
+  out[,c(lyarm):=.(LYS*deaths.soc,LYS*deaths.int,
+                   LYS0*deaths.soc,LYS0*deaths.int)] #LYL per pop by arm
+  ## out[,sum(value),by=id]                                       #CHECK
+  out <- out[,lapply(.SD,function(x) sum(x*value)),.SDcols=tosum,by=id] #sum against popn
+  ## non-incremental cost per ATT
+  out[,costperATT.soc:=cost.soc/att.soc];
+  out[,(psoc.sc):=lapply(.SD,function(x) x/att.soc),.SDcols=soc.sc]
+  out[,costperATT.int:=cost.int/att.int];
+  out[,(pint.sc):=lapply(.SD,function(x) x/att.int),.SDcols=int.sc]
+  ## increments wrt SOC (per child presenting at either DH/PHC)
+  out[,Dcost.int:=cost.int-cost.soc] #inc costs
+  out[,Datt.int:=att.int-att.soc] #inc atts
+  out[,attPC.int:=1e2*att.int/att.soc] #rel inc atts
+  out[,Ddeaths.int:=deaths.int-deaths.soc] #inc deaths
+  out[,DLYL0.int:=LYL0.int-LYL0.soc] #inc LYLs w/o discount
+  out[,DLYL.int:=LYL.int-LYL.soc] #inc LYLs
+  ## per whatever
+  out[,DcostperATT.int:=cost.int/att.int-cost.soc/att.soc];
+  out[,Dcostperdeaths.int:=-cost.int/deaths.int+cost.soc/deaths.soc]
+  out[,DcostperLYS0.int:=-cost.int/LYL0.int+cost.soc/LYL0.soc]
+  out[,DcostperLYS.int:=-cost.int/LYL.int+cost.soc/LYL.soc]
+  ## D/D
+  out[,DcostperDATT.int:=Dcost.int/Datt.int];
+  out[,DcostperDdeaths.int:=-Dcost.int/Ddeaths.int]
+  out[,DcostperDLYS0.int:=-Dcost.int/DLYL0.int]
+  out[,DcostperDLYS.int:=-Dcost.int/DLYL.int]
+  ## summarize
+  smy <- outsummary(out)
+  outs <- smy$outs; pouts <- smy$pouts; scouts <- smy$scouts
+  outs[,iso3:=cn]; pouts[,iso3:=cn]; scouts[,iso3:=cn]
+  ## capture tabular
+  allout[[cn]] <- outs; allpout[[cn]] <- pouts; allscout[[cn]] <- scouts
+  ## capture data for NMB
+  NMB[[cn]] <- out[,.(iso3=cn,DLYL.int,Dcost.int)]
+  ## ceac data
+  ceacl[[cn]] <- data.table(iso3=cn,
+                            int=make.ceac(out[,.(Q=-DLYL.int,P=Dcost.int)],lz),
+                            threshold=lz)
+}
+
+allout <- rbindlist(allout)
+allpout <- rbindlist(allpout)
+allscout <- rbindlist(allscout)
+ceacl <- rbindlist(ceacl)
+NMB <- rbindlist(NMB)
+
+fwrite(allout,file=gh('outdata/allout') + SA + '.csv')
+fwrite(allpout,file=gh('outdata/allpout') + SA + '.csv')
+fwrite(allscout,file=gh('outdata/allscout') + SA + '.csv')
+save(ceacl,file=gh('outdata/ceacl') + SA + '.Rdata')
+save(NMB,file=gh('outdata/NMB') + SA + '.Rdata')
+
+## checks
+out[,.(att.int/att.soc)]
+out[,.(Datt.int/att.soc)]
+out[,.(att.soc,att.int)]
+out[,.(Ddeaths.int/Datt.int)] #OK
+out[,.(DLYL.int/Ddeaths.int)] #OK
+## check
+allout[,.(costperATT.int.mid-costperATT.soc.mid,DcostperATT.int.mid)]
+
+## CEAC plot
+cbPalette <- c("#009E73")
+ceaclm <- melt(ceacl,id=c('iso3','threshold'))
+ceaclm[,Intervention:=ifelse(variable=='int','Intervention','Standard of care')]
+## name key
+ckey <- data.table(iso3=c('NGA'),
+                   country=c('Nigeria'))
+
+ceaclm <- merge(ceaclm,ckey,by='iso3',all.x=TRUE)
+
+## plot: int only
+GP <- ggplot(ceaclm[variable=='int' &
+                      iso3 %in% c('NGA')],
+             aes(threshold,value,
+                 col=country,lty=Intervention)) +
+  geom_line(show.legend = FALSE) +
+  theme_classic() +
+  theme(legend.position = 'top',legend.title = element_blank())+
+  ggpubr::grids()+
+  ylab('Probability cost-effective')+
+  xlab('Cost-effectiveness threshold (USD/DALY averted)')+
+  scale_colour_manual(values=cbPalette)
+GP
+
+ggsave(GP,file=gh('plots/CEAC') + SA + '.png',w=7,h=5)

@@ -195,30 +195,49 @@ AddSampleTests <- function(D){
   # (p <- getAB(0.60, ((20-100)^2)/392^2))
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
+  # D[,soc.dh.test:=rbeta(nrow(D),2.85744,1.90496)]
   D[,soc.dh.test:=rbeta(nrow(D),2.85744,1.90496)]
-  D[,int.dh.test:=rbeta(nrow(D),2.85744,1.90496)] # to increase this with Truenat intorduction
-  
+  D[,int.dh.test:=rbeta(nrow(D),2.85744,1.90496)] 
+ 
   # PHC
   # (p <- getAB(0.05, ((0-10)^2)/392^2))
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
   D[,soc.phc.test:=rbeta(nrow(D),3.59952,68.39088)]
-  D[,int.phc.test:=rbeta(nrow(D),3.59952,68.39088)]
+  # D[,soc.phc.test:=0]
+  
+  # (p <- getAB(0.60, ((20-100)^2)/392^2))
+  # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
+  # summary(rbeta(1000, p$a, p$b))
+  D[,int.phc.test:=rbeta(nrow(D),2.85744,1.90496)]
+  # D[,int.phc.test:=0.5] # to increase this with Truenat introduction
+  
+  # Type of test available
+  D[,soc.dh.fracUltra:=ifelse(age=='5-14',1,1)] # assume only Xpert is available in DH
+  D[,int.dh.fracUltra:=ifelse(age=='5-14',1,1)]
+  summary(D$soc.dh.fracUltra)
+  
+  D[,soc.phc.fracUltra:=ifelse(age=='5-14',0,0)] # assume no Xpert is available in PHC
+  D[,int.phc.fracUltra:=ifelse(age=='5-14',0,0)]
+  
+  # Bacteriological test possibility
+  summary(D$soc.dh.xpert.u5)
+  D[,soc.dh.test:=soc.dh.test*ifelse(age=='5-14',soc.dh.xpert.o5,soc.dh.xpert.u5)] # Actual children tested
+  D[,int.dh.test:=int.dh.test*ifelse(age=='5-14',soc.dh.xpert.o5,soc.dh.xpert.u5)]
+  
+  # D[,soc.phc.test:=soc.phc.test*ifelse(age=='5-14',soc.dh.xpert.o5,soc.dh.xpert.u5)] # Actual children tested
+  # D[,int.phc.test:=int.phc.test*ifelse(age=='5-14',soc.dh.xpert.o5,soc.dh.xpert.u5)]
   
   ## ------- X on sputum/GA -------
   ## People receiving Xpert Ultra testing [either sputum or GA], in those identified as having presumptive TB
-  D[,soc.dh.fracUltra:=ifelse(age=='5-14',dh.fracUltra,dh.fracUltra)]
-  D[,int.dh.fracUltra:=ifelse(age=='5-14',dh.fracUltra,dh.fracUltra)]
-  
-  D[,soc.phc.fracUltra:=ifelse(age=='5-14',phc.fracUltra,phc.fracUltra)]
-  D[,int.phc.fracUltra:=ifelse(age=='5-14',phc.fracUltra,phc.fracUltra)]
+
   
   # TB dx bac+ on Xpert Ultra on sputum
-  D[,soc.dh.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
-  D[,int.dh.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
-  
-  D[,soc.phc.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
-  D[,int.phc.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
+  # D[,soc.dh.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
+  # D[,int.dh.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
+  # 
+  # D[,soc.phc.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
+  # D[,int.phc.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
   
   D[,soc.dh.ptbxUltra:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
   D[,int.dh.ptbxUltra:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
@@ -248,6 +267,14 @@ AddSampleTests <- function(D){
   D[,int.dh.notest.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
   D[,int.phc.notest.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
   
+  # reassessment
+  # D[,soc.dh.bact.tbdx:=ifelse(tb=='TB',sens.clin,1-spec.clin)]
+  D[,soc.dh.bact.tbdx:=ifelse(tb=='TB',sens.clin,1-spec.clin)] #Assume no bacteriological testing @ reassessment
+  D[,int.dh.bact.tbdx:=ifelse(tb=='TB',sens.clin,1-spec.clin)]
+  
+  D[,soc.phc.bact.tbdx:=ifelse(tb=='TB',sens.clin,1-spec.clin)]
+  D[,int.phc.bact.tbdx:=ifelse(tb=='TB',sens.clin,1-spec.clin)]
+  
 }
 
 ## ======= COMBINED LABELLER ===========
@@ -257,13 +284,26 @@ AddSampleTests <- function(D){
 AddDataDrivenLabels <- function(D){
 
   # generate some parameters
+  (check <- names(D)[grep('presumed|presented',names(D))])
+  summary(D[,..check])
+  
+  D[,fac:=dh.presumed/phc.presumed]
+  ## specificity of presuming
+  D[,dh.presumed:=ifelse(tb!='noTB',1.0,1-spec.clin)] #TODO:placeholder for now
+  D[,phc.presumed:=ifelse(tb!='noTB',1.0/fac,1-spec.clin)] #TODO:placeholder for now
   
   # pre-treatment loss to follow-up
   D[,dh.ptltfu:=1-dh.att]
   D[,phc.ptltfu:=1-phc.att]
+  summary(D$dh.ptltfu)
   
   # pre-treatment loss to follow-up
-  D[,int.phc.rltfu:=soc.phc.rltfu]
+  names(PD)
+  PD |> filter(NAME=='soc.phc.rltfu')
+  summary(D$soc.phc.rltfu)
+  D[,soc.phc.rltfu:=1]
+  D[,int.phc.rltfu:=1]
+  summary(D$int.phc.rltfu)
   
   # RIF resistance
   D[,prr:=dh.prr]
@@ -294,7 +334,7 @@ MakeTreeParms <- function(D,P){
 makeAttributes <- function(D){
     nrep <- nrow(D)
     D[,id:=1:nrep]
-    fx <- list(age=agelevels,tb=tblevels,hiv=hivlevels,art=artlevels)
+    fx <- list(age=agelevels,tb=tblevels,hiv=hivlevels,art=artlevels, isoz = isoz)
     cofx <- expand.grid(fx)
     cat('Attribute combinations used:\n')
     print(cofx)
@@ -503,49 +543,68 @@ MLH <- function(dat){
 
 ## =========== output formatters
 outsummary <- function(out){
-
+  
+  keep <- c('costperATT.soc','costperATT.int',
+            'DcostperATT.int',
+            'Ddeaths.int',
+            'DLYL.int',
+            'DLYL0.int',
+            'Dcost.int',
+            'attPC.int',
+            'DcostperLYS0.int',
+            'DcostperLYS.int',
+            'Dcostperdeaths.int',
+            ## D/D
+            'DcostperDATT.int',
+            'DcostperDLYS0.int',
+            'DcostperDLYS.int',
+            'DcostperDdeaths.int')
+  scr <- c(psoc.sc,pint.sc)
+  scrm <- paste0(scr,'.mid')
+  keep <- c(keep,scr)
+  
   ## mid/lo/hi
-  outa <- MLH(out[,.(costperATT.soc,costperATT.int,
-                     DcostperATT.int,
-                     costperTPT.soc,costperTPT.int,
-                     DcostperTPT.int,
-                     Ddeaths.int,
-                     DLYL.int,
-                     DLYL0.int,
-                     DcostperLYS0.int,
-                     DcostperLYS.int,
-                     Dcostperdeaths.int,
-                     Dcost.int)])
-
+  outa <- MLH(out[,..keep])
+  
   ## more bespoke statistics
   outi <- out[,.(ICER.int= -mean(Dcost.int) / mean(DLYL.int))]
-
+  
   ## join
   outs <- do.call(cbind,list(outa$M,outa$L,outa$H,outi)) #combine
-
+  
   ## pretty version
   pouts <- outs[,.(costperATT.soc = brkt(costperATT.soc.mid,costperATT.soc.lo,costperATT.soc.hi),
                    costperATT.int = brkt(costperATT.int.mid,costperATT.int.lo,costperATT.int.hi),
-                   DcostperATT.int = brkt(DcostperATT.int.mid,DcostperATT.int.lo,DcostperATT.int.hi), # TODO::quick gap measure check!!
-                   costperTPT.soc = brkt(costperTPT.soc.mid,costperTPT.soc.lo,costperTPT.soc.hi),
-                   costperTPT.int = brkt(costperTPT.int.mid,costperTPT.int.lo,costperTPT.int.hi),
-                   DcostperTPT.int = brkt(DcostperTPT.int.mid,DcostperTPT.int.lo,DcostperTPT.int.hi),
+                   DcostperATT.int = brkt(DcostperATT.int.mid,DcostperATT.int.lo,DcostperATT.int.hi),
                    DcostperLYS0.int = brkt(DcostperLYS0.int.mid,
                                            DcostperLYS0.int.lo,DcostperLYS0.int.hi),
-                  DcostperLYS.int = brkt(DcostperLYS.int.mid,DcostperLYS.int.lo,DcostperLYS.int.hi),
-                  Dcostperdeaths.int = brkt(Dcostperdeaths.int.mid,
-                                            Dcostperdeaths.int.lo,Dcostperdeaths.int.hi),
-                  DcostPerChildContact.int = brkt(Dcost.int.mid,Dcost.int.lo,Dcost.int.hi),
-                  DdeathsPer100kChildContacts.int = brkt(-1e5*Ddeaths.int.mid,
-                                               -1e5*Ddeaths.int.hi,-1e5*Ddeaths.int.lo),
-                  DLYS0Per100kChildContacts.int = brkt(-1e5*DLYL0.int.mid,
-                                               -1e5*DLYL0.int.hi,-1e5*DLYL0.int.lo),
-                  DLYSPer100kChildContacts.int = brkt(-1e5*DLYL.int.mid,
-                                            -1e5*DLYL.int.hi,-1e5*DLYL.int.lo),
-                  ICER.int=round(ICER.int,0))]
-
+                   DcostperLYS.int = brkt(DcostperLYS.int.mid,DcostperLYS.int.lo,DcostperLYS.int.hi),
+                   Dcostperdeaths.int = brkt(Dcostperdeaths.int.mid,
+                                             Dcostperdeaths.int.lo,Dcostperdeaths.int.hi),
+                   ## D/D
+                   DcostperDATT.int = brkt(DcostperDATT.int.mid,DcostperDATT.int.lo,DcostperDATT.int.hi),
+                   DcostperDLYS0.int = brkt(DcostperDLYS0.int.mid,
+                                            DcostperDLYS0.int.lo,DcostperDLYS0.int.hi),
+                   DcostperDLYS.int = brkt(DcostperDLYS.int.mid,DcostperDLYS.int.lo,DcostperDLYS.int.hi),
+                   DcostperDdeaths.int = brkt(DcostperDdeaths.int.mid,
+                                              DcostperDdeaths.int.lo,DcostperDdeaths.int.hi),
+                   ## end D/D
+                   DcostPerOPD.int = brkt(Dcost.int.mid,Dcost.int.lo,Dcost.int.hi),
+                   DdeathsPer100kOPD.int = brkt(-1e5*Ddeaths.int.mid,
+                                                -1e5*Ddeaths.int.hi,-1e5*Ddeaths.int.lo),
+                   DLYS0Per100kOPD.int = brkt(-1e5*DLYL0.int.mid,
+                                              -1e5*DLYL0.int.hi,-1e5*DLYL0.int.lo),
+                   DLYSPer100kOPD.int = brkt(-1e5*DLYL.int.mid,
+                                             -1e5*DLYL.int.hi,-1e5*DLYL.int.lo),
+                   attPC.int = brkt(attPC.int.mid,attPC.int.lo,attPC.int.hi),
+                   DattPC.int = brkt(attPC.int.mid-1e2,attPC.int.lo-1e2,attPC.int.hi-1e2),
+                   ICER.int=round(ICER.int,0))]
+  
+  ## staged costs
+  scouts <- outa$M[,..scrm]
+  
   ## return value
-  list(outs=outs,pouts=pouts)
+  list(outs=outs,pouts=pouts,scouts=scouts)
 }
 
 

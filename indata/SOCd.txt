@@ -6,21 +6,12 @@ Standard of care
 					TB diagnosed (clinical)
 					No TB diagnosed
 						Reassessment
-							Clinical exam only
-								TB diagnosed (clinical)
-								No TB diagnosed 
-						No reassessment
-				Clinical exam + Xpert Ultra
-					TB diagnosed (bacteriological)
-					TB diagnosed (clinical)
-					No TB diagnosed
-						Reassessment
 							Clinical & or bacteriological assessment* 
 								TB diagnosed (bacteriological)
 								TB diagnosed (clinical)
 								No TB diagnosed 
 						No reassessment
-				Clinical exam + TrueNat
+				Clinical exam + Xpert Ultra
 					TB diagnosed (bacteriological)
 					TB diagnosed (clinical)
 					No TB diagnosed
@@ -43,21 +34,12 @@ Standard of care
 								TB diagnosed (clinical)
 								No TB diagnosed
 									Reassessment
-										Clinical exam only
-											TB diagnosed (clinical)
-											No TB diagnosed 
-									No reassessment
-							Clinical exam + Xpert Ultra
-								TB diagnosed (bacteriological)
-								TB diagnosed (clinical)
-								No TB diagnosed
-									Reassessment
 										Clinical & or bacteriological assessment* 
 											TB diagnosed (bacteriological)
 											TB diagnosed (clinical)
 											No TB diagnosed 
 									No reassessment
-							Clinical exam + TrueNat
+							Clinical exam + Xpert Ultra
 								TB diagnosed (bacteriological)
 								TB diagnosed (clinical)
 								No TB diagnosed
@@ -78,6 +60,7 @@ Standard of care
 								TB diagnosed (clinical)
 								No TB diagnosed 
 						No reassessment
+						Does not reach hospital
 				Clinical exam + TrueNat
 					TB diagnosed (bacteriological)
 					TB diagnosed (clinical)
