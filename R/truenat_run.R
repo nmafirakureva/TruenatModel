@@ -83,6 +83,16 @@ names(PDCO)
 # Quick check & fix
 unique(PDCO$parm)
 PDCO$parm <- gsub('prusumed', 'presumed', PDCO$parm)
+PDCO <- PDCO |> 
+  # filter(grepl('att',parm)) |>
+  mutate(parm = case_when(
+    age=='0-4'& grepl('att',parm) ~ paste0('u5.',parm),
+    age=='5-14'& grepl('att',parm) ~ paste0('o5.',parm),
+    .default = parm))
+
+unique(PDCO$parm)
+PDCO |> 
+  filter(grepl('att',parm)) 
 
 ## parameters to be determined from cascade data
 PD0 <- PD |> 
@@ -369,3 +379,6 @@ GP <- ggplot(ceaclm[variable=='int' &
 GP
 
 ggsave(GP,file=gh('plots/CEAC') + SA + '.png',w=7,h=5)
+
+allout$ICER.int
+
