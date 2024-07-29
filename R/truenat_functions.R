@@ -185,26 +185,28 @@ AddSampleTests <- function(D){
   # ~20-100% availability of Xpert Ultra in DH
   
   # DH
-  # (p <- getAB(0.60, ((20-100)^2)/392^2))
+  # (p <- getAB(0.60, ((50-100)^2)/392^2))
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
   # D[,soc.dh.test:=rbeta(nrow(D),2.85744,1.90496)]
-  D[,soc.dh.test:=rbeta(nrow(D),2.85744,1.90496)]
-  D[,int.dh.test:=rbeta(nrow(D),2.85744,1.90496)] 
+  D[,soc.dh.test:=rbeta(nrow(D),8.251046,5.500698)]
+  D[,int.dh.test:=rbeta(nrow(D),8.251046,5.500698)] 
+  # D[,soc.dh.test:=1]
+  # D[,int.dh.test:=1]
  
   # PHC
   # (p <- getAB(0.03, ((0-5)^2)/392^2))
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
   D[,soc.phc.test:=rbeta(nrow(D),5.335947,172.5289)]
-  D[,soc.phc.test:=0]
+  # D[,soc.phc.test:=0]
   
   # (p <- getAB(0.60, ((20-100)^2)/392^2))
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
-  D[,int.phc.test:=rbeta(nrow(D),2.85744,1.90496)]
-  D[,int.phc.test:=1] # to increase this with Truenat introduction
-  
+  D[,int.phc.test:=rbeta(nrow(D),8.251046,5.500698)]
+  # D[,int.phc.test:=0.6] # to increase this with Truenat introduction
+  summary(D$int.phc.test)
   # Type of test available
   D[,soc.dh.fracUltra:=ifelse(age=='5-14',1,1)] # assume only Xpert is available in DH
   D[,int.dh.fracUltra:=ifelse(age=='5-14',1,1)]
@@ -214,13 +216,17 @@ AddSampleTests <- function(D){
   D[,int.phc.fracUltra:=ifelse(age=='5-14',0,0)]
   
   # Bacteriological test possibility
+  # Test is only possible for children who can provide a sample
   summary(D$soc.dh.xpert.u5)
-  D[,soc.dh.test:=soc.dh.test*ifelse(age=='5-14',soc.dh.exp.sputum.o5,soc.dh.exp.sputum.u5)] # Actual children tested
-  D[,int.dh.test:=int.dh.test*ifelse(age=='5-14',soc.dh.exp.sputum.o5,soc.dh.exp.sputum.u5)]
+  # D[,soc.dh.fracUltra:=soc.dh.fracUltra*ifelse(age=='5-14',soc.dh.exp.sputum.o5,soc.dh.exp.sputum.u5)] # Actual children tested
+  # D[,int.dh.fracUltra:=int.dh.fracUltra*ifelse(age=='5-14',soc.dh.exp.sputum.o5,soc.dh.exp.sputum.u5)]
   
-  D[,soc.phc.test:=soc.phc.test*ifelse(age=='5-14',soc.phc.exp.sputum.o5,soc.phc.exp.sputum.u5)] # Actual children tested
-  D[,int.phc.test:=int.phc.test*ifelse(age=='5-14',soc.phc.exp.sputum.o5,soc.phc.exp.sputum.u5)]
+  D[,soc.dh.test:=ifelse(age=='5-14',soc.dh.test*soc.dh.exp.sputum.o5,soc.dh.test*soc.dh.exp.sputum.u5)] # Actual children tested
+  D[,int.dh.test:=ifelse(age=='5-14',int.dh.test*soc.dh.exp.sputum.o5,int.dh.test*soc.dh.exp.sputum.u5)]
   
+  D[,soc.phc.fracUltra:=soc.phc.fracUltra*ifelse(age=='5-14',soc.phc.exp.sputum.o5,soc.phc.exp.sputum.u5)] # Actual children tested
+  D[,int.phc.fracUltra:=int.phc.fracUltra*ifelse(age=='5-14',soc.phc.exp.sputum.o5,soc.phc.exp.sputum.u5)]
+
   ## ------- X on sputum/GA -------
   ## People receiving Xpert Ultra testing [either sputum or GA], in those identified as having presumptive TB
 
@@ -272,12 +278,11 @@ AddSampleTests <- function(D){
 
 ## ======= COMBINED LABELLER ===========
 
-
 ## additional labels from data (may overwrite some initial version currently)
 AddDataDrivenLabels <- function(D){
 
   # generate some parameters
-  (check <- names(D)[grep('presumed|presented',names(D))])
+  (check <- names(D)[grep('presumptive|presented',names(D))])
   summary(D[,..check])
   
   # Initial presentation
@@ -287,9 +292,16 @@ AddDataDrivenLabels <- function(D){
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
   D[,phc.presented :=rbeta(nrow(D),30.21696,3.35744)]
+  
+  ## TB more likely to go to DH
+  D[tb!='noTB' & age=='0-4',phc.presented:=1-iodds(OR.dh.if.TB.u5*odds(1-phc.presented))]
+  D[tb!='noTB' & age!='0-4',phc.presented:=1-iodds(OR.dh.if.TB.o5*odds(1-phc.presented))]
+  
+  summary(D[,.(phc.presented),])
+  (D[,.(mean(phc.presented)),by=tb])
   D[,dh.presented :=1-phc.presented]
   
-  # Presumed TB
+  # presumptive TB
   # (p <- getAB(0.89, ((98-60)^2)/392^2))  #sensitivity:89% (95% CI 52% to 98%) based on https://doi.org/10.1002/14651858.CD013693.pub2
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
@@ -300,31 +312,33 @@ AddDataDrivenLabels <- function(D){
   # summary(rbeta(1000, p$a, p$b))
   D[,spec.sympt.screen:=rbeta(nrow(D),21.45787,9.640494)]
   
-  # PD <- setDT(PD)
-  # summary(PD[,dh.presumed/phc.presumed])
+  # PD2 <- setDT(PD2)
+  # summary(PD2[,dh.presumed/phc.presumed])
   
   D[,fac:=dh.presumed/phc.presumed] # factor to scale down sensitivity of presuming at PHC
   ## specificity of presuming
-  D[,dh.presumed:=ifelse(tb!='noTB',sens.sympt.screen,1-spec.sympt.screen)] #TODO:placeholder for now
-  D[,phc.presumed:=ifelse(tb!='noTB',sens.sympt.screen/fac,1-spec.sympt.screen)] #TODO:placeholder for now
+  D[,dh.presumed:=ifelse(tb!='noTB',1,1-spec.sympt.screen)] #TODO:placeholder for now
+  D[,phc.presumed:=ifelse(tb!='noTB',1,1-spec.sympt.screen)] #TODO:placeholder for now
   
-  # pre-treatment loss to follow-up
-  (check <- names(D)[grep('u5.dh.att|o5.dh.att|u5.phc.att|o5.phc.att',names(D))])
-  summary(D[,..check])
-  D[,dh.ptltfu:=ifelse(age=='0-4',1-u5.dh.att,1-o5.dh.att)]
-  D[,phc.ptltfu:=ifelse(age=='0-4',1-u5.phc.att,1-o5.phc.att)]
-  summary(D$dh.ptltfu)
-  
+  # # TODO: check if this is OKAY
+  # # Approach to normalizing everything to presumptive TB
+  # D[,phc.presented:=phc.presented/phc.presumed]
+  # D[,dh.presented:=dh.presented/dh.presumed]
+  # D[,phc.presumed:=phc.presumed/phc.presumed]
+  # D[,dh.presumed:=dh.presumed/dh.presumed]
+  # 
+  # D |> select(tb, phc.presented,dh.presented,phc.presumed,dh.presumed) |> 
+  #   group_by(tb) |> summarise_all(mean)
   # hospital referral loss to follow-up
-  # Presumed TB
+  # presumptive TB
   # (p <- getAB(0.5, ((0-80)^2)/392^2))  
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
   names(PD)
   PD |> filter(NAME=='soc.phc.rltfu')
   summary(D$soc.phc.rltfu)
-  # D[,soc.phc.rltfu:=0.5]
-  D[,int.phc.rltfu:=soc.phc.rltfu*0.1]
+  # D[,soc.phc.rltfu:=1]
+  D[,int.phc.rltfu:=soc.phc.rltfu]
   summary(D$int.phc.rltfu)
   
   # RIF resistance
@@ -337,9 +351,17 @@ AddDataDrivenLabels <- function(D){
   # D[,soc.dh.bact.tbdx:=1-dh.att]
   # D[,int.dh.bact.tbdx:=1-phc.att]
   
+  # pre-treatment loss to follow-up
+  (check <- names(D)[grep('u5.dh.att|o5.dh.att|u5.phc.att|o5.phc.att',names(D))])
+  summary(D[,..check])
+  D[,dh.ptltfu:=ifelse(age=='0-4',1-u5.dh.att,1-o5.dh.att)]
+  D[,phc.ptltfu:=ifelse(age=='0-4',1-u5.phc.att,1-o5.phc.att)]
+  summary(D$dh.ptltfu)
+  
+  D[,phc.14phcltfu:=dh.14dhltfu]
   # 
-  D[,hivprev.u5:=0]
-  D[,hivprev.o5:=0]
+  D[,hivprev.u5:=frac.hiv]
+  D[,hivprev.o5:=frac.hiv]
 }
 
 ## combined function to add the labels to the tree prior to calculations
@@ -365,20 +387,11 @@ makeAttributes <- function(D){
     print(cofx)
     D <- D[rep(1:nrow(D),each=nrow(cofx))] #expand out data
     D[,names(cofx):=cofx[rep(1:nrow(cofx),nrep),]]
-    
     ## --- age
-    # D[,F.u5:=ifelse(isoz=='CMR', cmr.frac.u5, uga.frac.u5)]
-    # D[,artcov:=ifelse(isoz=='CMR', cmr.artcov, uga.artcov)]
-    # D[,artcov:=0.99]
- 
-    # D[,hivprev.u5:=ifelse(isoz=='CMR', cmr.frac.hiv, uga.frac.hiv)]
-    # D[,hivprevO:=hivprev.u5]
-
     D[,value:=ifelse(age=='5-14',1-dh.fracO,dh.fracO)] #NOTE value first set here
-
     ## --- HIV/ART
-    D[,hivprev.u5:=0.01]
-    D[,hivprev.o5:=0.01]
+    D[,hivprev.u5:=HHhivprev04]
+    D[,hivprev.o5:=HHhivprev514]
     # D[,artcov:=0]
     D[,h01:=0]
     D[age!='5-14',h10:=hivprev.u5*(1-artcov)]
@@ -397,20 +410,16 @@ makeAttributes <- function(D){
     ## ## tbi = f x tbp + (1-f) x tbd
     ## ## where: f=fraction initially seeking care at PHC; tbp=prev @ phc; tbd=prev @ dh
     ## ## NOTE the 'underlying' TB prev in care-seekers in controlled by soc parms
-    ## D[,tbi:= d.soc.pphc * d.phc.tbinprsmptv + (1-d.soc.pphc) * d.dh.tbinprsmptv]
-    ## D[tb=='noTB',value:=value*(1-tbi)]
-    ## D[tb=='TB-',value:=value*tbi*ifelse(age=='5-14',1-Fbc.o5,1-Fbc.u5)] #NOTE assuming no TB outside of presumptive?
-    ## D[tb=='TB',value:=value*tbi*ifelse(age=='5-14',Fbc.o5,Fbc.u5)]
-    ## D[,tbi:=NULL]                            #remove temporary variable
-    # ## (new version) based on data:
-    # D[,tbi:=ifelse(age=='5-14',d.TBprev.ICS.o5,d.TBprev.ICS.u5)]
-    # D[tb=='noTB',value:=value*(1-tbi)]
-    D[tb=='noTB',value:=value*ifelse(age=='5-14',1-Fbc.o5,1-Fbc.u5)] #NOTE assuming no TB outside of presumptive?
-    D[tb=='TB',value:=value*ifelse(age=='5-14',Fbc.o5,Fbc.u5)]
+    D[,tbi:= phc.presented * phc.tbprev + (1-phc.presented) * dh.tbprev]
+    D[tb=='noTB',value:=value*(1-tbi)]
+    D[tb=='TB-',value:=value*tbi*ifelse(age=='5-14',1-Fbc.o5,1-Fbc.u5)] #NOTE assuming no TB outside of presumptive?
+    D[tb=='TB+',value:=value*tbi*ifelse(age=='5-14',Fbc.o5,Fbc.u5)]
+    
+    # D[tb=='noTB',value:=value*ifelse(age=='5-14',1-Fbc.o5,1-Fbc.u5)] #NOTE assuming no TB outside of presumptive?
+    # D[tb=='TB',value:=value*ifelse(age=='5-14',Fbc.o5,Fbc.u5)]
     # D[,tbi:=NULL]                            #remove temporary variable
     return(D)
 }
-
 
 
 ## function for generating random sample of costs
@@ -477,7 +486,7 @@ GetLifeYears <- function(isolist,discount.rate,yearfrom){
 ## wtp <- 500
 
 ## NOTE this is more illustrative for now
-## NOTE needs a folder called graphs/ creating (which is currently excluded from the repo)
+## NOTE needs a folder called plots/ creating (which is currently excluded from the repo)
 ## some automatic CEA outputs
 file.id='';Kmax=5e3;wtp=5e3;
 MakeCEAoutputs <- function(data,LY,
@@ -509,26 +518,26 @@ MakeCEAoutputs <- function(data,LY,
   ceac.plot(M,graph='ggplot2') +
     scale_x_continuous(label=comma) +
     theme_classic() + ggpubr::grids()
-  fn <- paste0(here('graphs/CEAC_'),file.id,'.png')
+  fn <- paste0(here('plots/CEAC_'),file.id,'.png')
   ggsave(file=fn,w=7,h=7)
 
   ceplane.plot(M,graph='ggplot2',wtp=wtp)+
     scale_x_continuous(label=comma) +
     theme_classic() +
     theme(legend.position = 'top') + ggpubr::grids()
-  fn <- paste0(here('graphs/CE_'),file.id,'.png')
+  fn <- paste0(here('plots/CE_'),file.id,'.png')
   ggsave(file=fn,w=7,h=7)
 
   eib.plot(M,graph='ggplot2',wtp=wtp) +
     scale_x_continuous(label=comma) +
     theme_classic() + ggpubr::grids()
-  fn <- paste0(here('graphs/EIB_'),file.id,'.png')
+  fn <- paste0(here('plots/EIB_'),file.id,'.png')
   ggsave(file=fn,w=7,h=7)
 
   evi.plot(M,graph='ggplot2',wtp=wtp) +
     scale_x_continuous(label=comma) +
     theme_classic() + ggpubr::grids()
-  fn <- paste0(here('graphs/EVI_'),file.id,'.png')
+  fn <- paste0(here('plots/EVI_'),file.id,'.png')
   ggsave(file=fn,w=7,h=7)
 
 }
@@ -563,27 +572,27 @@ MLH <- function(dat){
   setnames(L,nnmz,lnmz); setnames(M,nnmz,mnmz); setnames(H,nnmz,hnmz);
   list(L=L,M=M,H=H)
 }
-## MLH(out[,.(DcostperATT.int,DcostperATT.soc)]) #test
+## MLH(out[,.(DcostperATT,DcostperATT.soc)]) #test
 
 
 ## =========== output formatters
 outsummary <- function(out){
   
   keep <- c('costperATT.soc','costperATT.int',
-            'DcostperATT.int',
-            'Ddeaths.int',
-            'DLYL.int',
-            'DLYL0.int',
-            'Dcost.int',
-            'attPC.int',
-            'DcostperLYS0.int',
-            'DcostperLYS.int',
-            'Dcostperdeaths.int',
+            'DcostperATT',
+            'Ddeaths',
+            'DLYL',
+            'DLYL0',
+            'Dcost',
+            'attPC',
+            'DcostperLYS0',
+            'DcostperLYS',
+            'Dcostperdeaths',
             ## D/D
-            'DcostperDATT.int',
-            'DcostperDLYS0.int',
-            'DcostperDLYS.int',
-            'DcostperDdeaths.int')
+            'DcostperDATT',
+            'DcostperDLYS0',
+            'DcostperDLYS',
+            'DcostperDdeaths')
   scr <- c(psoc.sc,pint.sc)
   scrm <- paste0(scr,'.mid')
   keep <- c(keep,scr)
@@ -592,7 +601,7 @@ outsummary <- function(out){
   outa <- MLH(out[,..keep])
   
   ## more bespoke statistics
-  outi <- out[,.(ICER.int= -mean(Dcost.int) / mean(DLYL.int))]
+  outi <- out[,.(ICER= -mean(Dcost) / mean(DLYL))]
   
   ## join
   outs <- do.call(cbind,list(outa$M,outa$L,outa$H,outi)) #combine
@@ -600,30 +609,30 @@ outsummary <- function(out){
   ## pretty version
   pouts <- outs[,.(costperATT.soc = brkt(costperATT.soc.mid,costperATT.soc.lo,costperATT.soc.hi),
                    costperATT.int = brkt(costperATT.int.mid,costperATT.int.lo,costperATT.int.hi),
-                   DcostperATT.int = brkt(DcostperATT.int.mid,DcostperATT.int.lo,DcostperATT.int.hi),
-                   DcostperLYS0.int = brkt(DcostperLYS0.int.mid,
-                                           DcostperLYS0.int.lo,DcostperLYS0.int.hi),
-                   DcostperLYS.int = brkt(DcostperLYS.int.mid,DcostperLYS.int.lo,DcostperLYS.int.hi),
-                   Dcostperdeaths.int = brkt(Dcostperdeaths.int.mid,
-                                             Dcostperdeaths.int.lo,Dcostperdeaths.int.hi),
+                   DcostperATT = brkt(DcostperATT.mid,DcostperATT.lo,DcostperATT.hi),
+                   DcostperLYS0 = brkt(DcostperLYS0.mid,
+                                           DcostperLYS0.lo,DcostperLYS0.hi),
+                   DcostperLYS = brkt(DcostperLYS.mid,DcostperLYS.lo,DcostperLYS.hi),
+                   Dcostperdeaths = brkt(Dcostperdeaths.mid,
+                                             Dcostperdeaths.lo,Dcostperdeaths.hi),
                    ## D/D
-                   DcostperDATT.int = brkt(DcostperDATT.int.mid,DcostperDATT.int.lo,DcostperDATT.int.hi),
-                   DcostperDLYS0.int = brkt(DcostperDLYS0.int.mid,
-                                            DcostperDLYS0.int.lo,DcostperDLYS0.int.hi),
-                   DcostperDLYS.int = brkt(DcostperDLYS.int.mid,DcostperDLYS.int.lo,DcostperDLYS.int.hi),
-                   DcostperDdeaths.int = brkt(DcostperDdeaths.int.mid,
-                                              DcostperDdeaths.int.lo,DcostperDdeaths.int.hi),
+                   DcostperDATT = brkt(DcostperDATT.mid,DcostperDATT.lo,DcostperDATT.hi),
+                   DcostperDLYS0 = brkt(DcostperDLYS0.mid,
+                                            DcostperDLYS0.lo,DcostperDLYS0.hi),
+                   DcostperDLYS = brkt(DcostperDLYS.mid,DcostperDLYS.lo,DcostperDLYS.hi),
+                   DcostperDdeaths = brkt(DcostperDdeaths.mid,
+                                              DcostperDdeaths.lo,DcostperDdeaths.hi),
                    ## end D/D
-                   DcostPerOPD.int = brkt(Dcost.int.mid,Dcost.int.lo,Dcost.int.hi),
-                   DdeathsPer100kOPD.int = brkt(-1e5*Ddeaths.int.mid,
-                                                -1e5*Ddeaths.int.hi,-1e5*Ddeaths.int.lo),
-                   DLYS0Per100kOPD.int = brkt(-1e5*DLYL0.int.mid,
-                                              -1e5*DLYL0.int.hi,-1e5*DLYL0.int.lo),
-                   DLYSPer100kOPD.int = brkt(-1e5*DLYL.int.mid,
-                                             -1e5*DLYL.int.hi,-1e5*DLYL.int.lo),
-                   attPC.int = brkt(attPC.int.mid,attPC.int.lo,attPC.int.hi),
-                   DattPC.int = brkt(attPC.int.mid-1e2,attPC.int.lo-1e2,attPC.int.hi-1e2),
-                   ICER.int=round(ICER.int,0))]
+                   DcostPerOPD = brkt(Dcost.mid,Dcost.lo,Dcost.hi),
+                   DdeathsPer100kOPD = brkt(-1e5*Ddeaths.mid,
+                                                -1e5*Ddeaths.hi,-1e5*Ddeaths.lo),
+                   DLYS0Per100kOPD = brkt(-1e5*DLYL0.mid,
+                                              -1e5*DLYL0.hi,-1e5*DLYL0.lo),
+                   DLYSPer100kOPD = brkt(-1e5*DLYL.mid,
+                                             -1e5*DLYL.hi,-1e5*DLYL.lo),
+                   attPC = brkt(attPC.mid,attPC.lo,attPC.hi),
+                   DattPC = brkt(attPC.mid-1e2,attPC.lo-1e2,attPC.hi-1e2),
+                   ICER=round(ICER,0))]
   
   ## staged costs
   scouts <- outa$M[,..scrm]
@@ -665,76 +674,139 @@ Table2 <- function(dat){
   
   ## mid/lo/hi
   outa <- MLH(dat[,.(
-    Dcontacts,contacts.int,contacts.soc,
-    Dtpt,tpt.int,tpt.soc,
+    Dpttb,pttb.int,pttb.soc,
+    DPHC.presumptive,PHC.presumptive.int,PHC.presumptive.soc,
+    DDH.presumptive,DH.presumptive.int,DH.presumptive.soc,
+    Dpresumptive,presumptive.int,presumptive.soc,
+    DPHC.evaluated,PHC.evaluated.int,PHC.evaluated.soc,
+    DDH.evaluated,DH.evaluated.int,DH.evaluated.soc,
+    Dassessments,assessments.int,assessments.soc,
+    Dpassessphc,passessphc.int,passessphc.soc,
+    Dbacassess,bacassess.int,bacassess.soc,
+    Dpbacassessphc,pbacassessphc.int,pbacassessphc.soc,
+    Drefers,refers.int,refers.soc,
+    Ddx,dx.int,dx.soc,
+    Dpdxphc,pdxphc.int,pdxphc.soc,
+    Dpdxb,pdxb.int,pdxb.soc,
+    DPHC.treated,PHC.treated.int,PHC.treated.soc,
+    DDH.treated,DH.treated.int,DH.treated.soc,
     Datt,att.int,att.soc,
-    DLYL,LYL.int,LYL.soc,
-    Dprevtb,prevtb.int,prevtb.soc,
-    Dinctb,inctb.int,inctb.soc,
-    Dincdeaths,incdeaths.int,incdeaths.soc,
-    Dprevdeaths,prevdeaths.int,prevdeaths.soc,
+    Dpatt.phc,patt.phc.int,patt.phc.soc,
+    Dpatt.bac,patt.bac.int,patt.bac.soc,
+    Dpttbtx, pttbtx.int, pttbtx.soc,
+    Dpftbtx, pftbtx.int, pftbtx.soc,
     Ddeaths,deaths.int,deaths.soc,
-    Dcost.screen,cost.screen.int,cost.screen.soc,
-    Dcost.tpt,cost.tpt.int,cost.tpt.soc,
-    Dcost.prev.att,cost.prev.att.int,cost.prev.att.soc,
-    Dcost.inc.att,cost.inc.att.int,cost.inc.att.soc,
+    DLYL,LYL.int,LYL.soc,
+    DPHC.evaluated.cost,PHC.evaluated.cost.int,PHC.evaluated.cost.soc,
+    DDH.evaluated.cost,DH.evaluated.cost.int,DH.evaluated.cost.soc,
+    Dcost.assessments,cost.assessments.int,cost.assessments.soc,
+    DPHC.treated.cost,PHC.treated.cost.int,PHC.treated.cost.soc,
+    DDH.treated.cost,DH.treated.cost.int,DH.treated.cost.soc,
     Dcost,cost.int,cost.soc
   )])
   
   ## more bespoke statistics
-  outi <- dat[,.(ICER.int= -mean(Dcost) / mean(DLYL))]
+  outi <- dat[,.(ICER= -mean(Dcost) / mean(DLYL))]
   
   ## join
   outs <- do.call(cbind,list(outa$M,outa$L,outa$H,outi)) #combine
   
   ## pretty version
-  fac <- 1e3 #per fac index cases
+  fac <- 1e2 #per  per 100 children with presumptive TB (actually presenting for now)
   pouts <- outs[,.(
-    Dcontacts = brkt(fac*Dcontacts.mid,fac*Dcontacts.lo,fac*Dcontacts.hi),
-    contacts.int = brkt(fac*contacts.int.mid,fac*contacts.int.lo,fac*contacts.int.hi),
-    contacts.soc = brkt(fac*contacts.soc.mid,fac*contacts.soc.lo,fac*contacts.soc.hi),
-    Dtpt = brkt(fac*Dtpt.mid,fac*Dtpt.lo,fac*Dtpt.hi),
-    tpt.int = brkt(fac*tpt.int.mid,fac*tpt.int.lo,fac*tpt.int.hi),
-    tpt.soc = brkt(fac*tpt.soc.mid,fac*tpt.soc.lo,fac*tpt.soc.hi),
+    Dpttb = brkt(fac*Dpttb.mid,fac*Dpttb.lo,fac*Dpttb.hi),
+    pttb.int = brkt(fac*pttb.int.mid,fac*pttb.int.lo,fac*pttb.int.hi),
+    pttb.soc = brkt(fac*pttb.soc.mid,fac*pttb.soc.lo,fac*pttb.soc.hi),
+    DPHC.presumptive = brkt(fac*DPHC.presumptive.mid,fac*DPHC.presumptive.lo,fac*DPHC.presumptive.hi),
+    PHC.presumptive.int = brkt(fac*PHC.presumptive.int.mid,fac*PHC.presumptive.int.lo,fac*PHC.presumptive.int.hi),
+    PHC.presumptive.soc = brkt(fac*PHC.presumptive.soc.mid,fac*PHC.presumptive.soc.lo,fac*PHC.presumptive.soc.hi),
+    DDH.presumptive = brkt(fac*DDH.presumptive.mid,fac*DDH.presumptive.lo,fac*DDH.presumptive.hi),
+    DH.presumptive.int = brkt(fac*DH.presumptive.int.mid,fac*DH.presumptive.int.lo,fac*DH.presumptive.int.hi),
+    DH.presumptive.soc = brkt(fac*DH.presumptive.soc.mid,fac*DH.presumptive.soc.lo,fac*DH.presumptive.soc.hi),
+    Dpresumptive = brkt(fac*Dpresumptive.mid,fac*Dpresumptive.lo,fac*Dpresumptive.hi),
+    presumptive.int = brkt(fac*presumptive.int.mid,fac*presumptive.int.lo,fac*presumptive.int.hi),
+    presumptive.soc = brkt(fac*presumptive.soc.mid,fac*presumptive.soc.lo,fac*presumptive.soc.hi),
+    DPHC.evaluated = brkt(fac*DPHC.evaluated.mid,fac*DPHC.evaluated.lo,fac*DPHC.evaluated.hi),
+    PHC.evaluated.int = brkt(fac*PHC.evaluated.int.mid,fac*PHC.evaluated.int.lo,fac*PHC.evaluated.int.hi),
+    PHC.evaluated.soc = brkt(fac*PHC.evaluated.soc.mid,fac*PHC.evaluated.soc.lo,fac*PHC.evaluated.soc.hi),
+    DDH.evaluated = brkt(fac*DDH.evaluated.mid,fac*DDH.evaluated.lo,fac*DDH.evaluated.hi),
+    DH.evaluated.int = brkt(fac*DH.evaluated.int.mid,fac*DH.evaluated.int.lo,fac*DH.evaluated.int.hi),
+    DH.evaluated.soc = brkt(fac*DH.evaluated.soc.mid,fac*DH.evaluated.soc.lo,fac*DH.evaluated.soc.hi),
+    Dassessments = brkt(fac*Dassessments.mid,fac*Dassessments.lo,fac*Dassessments.hi),
+    assessments.int = brkt(fac*assessments.int.mid,fac*assessments.int.lo,fac*assessments.int.hi),
+    assessments.soc = brkt(fac*assessments.soc.mid,fac*assessments.soc.lo,fac*assessments.soc.hi),
+    Dpassessphc = brkt(fac*Dpassessphc.mid,fac*Dpassessphc.lo,fac*Dpassessphc.hi),
+    passessphc.int = brkt(fac*passessphc.int.mid,fac*passessphc.int.lo,fac*passessphc.int.hi),
+    passessphc.soc = brkt(fac*passessphc.soc.mid,fac*passessphc.soc.lo,fac*passessphc.soc.hi),
+    Dbacassess = brkt(fac*Dbacassess.mid,fac*Dbacassess.lo,fac*Dbacassess.hi),
+    bacassess.int = brkt(fac*bacassess.int.mid,fac*bacassess.int.lo,fac*bacassess.int.hi),
+    bacassess.soc = brkt(fac*bacassess.soc.mid,fac*bacassess.soc.lo,fac*bacassess.soc.hi),
+    Dpbacassessphc = brkt(fac*Dpbacassessphc.mid,fac*Dpbacassessphc.lo,fac*Dpbacassessphc.hi),
+    pbacassessphc.int = brkt(fac*pbacassessphc.int.mid,fac*pbacassessphc.int.lo,fac*pbacassessphc.int.hi),
+    pbacassessphc.soc = brkt(fac*pbacassessphc.soc.mid,fac*pbacassessphc.soc.lo,fac*pbacassessphc.soc.hi),
+    Drefers = brkt(fac*Drefers.mid,fac*Drefers.lo,fac*Drefers.hi),
+    refers.int = brkt(fac*refers.int.mid,fac*refers.int.lo,fac*refers.int.hi),
+    refers.soc = brkt(fac*refers.soc.mid,fac*refers.soc.lo,fac*refers.soc.hi),
+    Ddx = brkt(fac*Ddx.mid,fac*Ddx.lo,fac*Ddx.hi),
+    dx.int = brkt(fac*dx.int.mid,fac*dx.int.lo,fac*dx.int.hi),
+    dx.soc = brkt(fac*dx.soc.mid,fac*dx.soc.lo,fac*dx.soc.hi),
+    Dpdxphc = brkt(fac*Dpdxphc.mid,fac*Dpdxphc.lo,fac*Dpdxphc.hi),
+    pdxphc.int = brkt(fac*pdxphc.int.mid,fac*pdxphc.int.lo,fac*pdxphc.int.hi),
+    pdxphc.soc = brkt(fac*pdxphc.soc.mid,fac*pdxphc.soc.lo,fac*pdxphc.soc.hi),
+    Dpdxb = brkt(fac*Dpdxb.mid,fac*Dpdxb.lo,fac*Dpdxb.hi),
+    pdxb.int = brkt(fac*pdxb.int.mid,fac*pdxb.int.lo,fac*pdxb.int.hi),
+    pdxb.soc = brkt(fac*pdxb.soc.mid,fac*pdxb.soc.lo,fac*pdxb.soc.hi),
+    DPHC.treated = brkt(fac*DPHC.treated.mid,fac*DPHC.treated.lo,fac*DPHC.treated.hi),
+    PHC.treated.int = brkt(fac*PHC.treated.int.mid,fac*PHC.treated.int.lo,fac*PHC.treated.int.hi),
+    PHC.treated.soc = brkt(fac*PHC.treated.soc.mid,fac*PHC.treated.soc.lo,fac*PHC.treated.soc.hi),
+    DDH.treated = brkt(fac*DDH.treated.mid,fac*DDH.treated.lo,fac*DDH.treated.hi),
+    DH.treated.int = brkt(fac*DH.treated.int.mid,fac*DH.treated.int.lo,fac*DH.treated.int.hi),
+    DH.treated.soc = brkt(fac*DH.treated.soc.mid,fac*DH.treated.soc.lo,fac*DH.treated.soc.hi),
     Datt = brkt(fac*Datt.mid,fac*Datt.lo,fac*Datt.hi),
     att.int = brkt(fac*att.int.mid,fac*att.int.lo,fac*att.int.hi),
     att.soc = brkt(fac*att.soc.mid,fac*att.soc.lo,fac*att.soc.hi),
-    DLYL = brkt(fac*DLYL.mid,fac*DLYL.lo,fac*DLYL.hi),
-    LYL.int = brkt(fac*LYL.int.mid,fac*LYL.int.lo,fac*LYL.int.hi),
-    LYL.soc = brkt(fac*LYL.soc.mid,fac*LYL.soc.lo,fac*LYL.soc.hi),
-    Dprevtb = brkt(fac*Dprevtb.mid,fac*Dprevtb.lo,fac*Dprevtb.hi),
-    prevtb.int = brkt(fac*prevtb.int.mid,fac*prevtb.int.lo,fac*prevtb.int.hi),
-    prevtb.soc = brkt(fac*prevtb.soc.mid,fac*prevtb.soc.lo,fac*prevtb.soc.hi),
-    Dinctb = brkt(fac*Dinctb.mid,fac*Dinctb.lo,fac*Dinctb.hi),
-    inctb.int = brkt(fac*inctb.int.mid,fac*inctb.int.lo,fac*inctb.int.hi),
-    inctb.soc = brkt(fac*inctb.soc.mid,fac*inctb.soc.lo,fac*inctb.soc.hi),
-    Dincdeaths = brkt(fac*Dincdeaths.mid,fac*Dincdeaths.lo,fac*Dincdeaths.hi),
-    incdeaths.int = brkt(fac*incdeaths.int.mid,fac*incdeaths.int.lo,fac*incdeaths.int.hi),
-    incdeaths.soc = brkt(fac*incdeaths.soc.mid,fac*incdeaths.soc.lo,fac*incdeaths.soc.hi),
-    Dprevdeaths = brkt(fac*Dprevdeaths.mid,fac*Dprevdeaths.lo,fac*Dprevdeaths.hi),
-    prevdeaths.int = brkt(fac*prevdeaths.int.mid,fac*prevdeaths.int.lo,fac*prevdeaths.int.hi),
-    prevdeaths.soc = brkt(fac*prevdeaths.soc.mid,fac*prevdeaths.soc.lo,fac*prevdeaths.soc.hi),
+    Dpatt.phc = brkt(fac*Dpatt.phc.mid,fac*Dpatt.phc.lo,fac*Dpatt.phc.hi),
+    patt.phc.int = brkt(fac*patt.phc.int.mid,fac*patt.phc.int.lo,fac*patt.phc.int.hi),
+    patt.phc.soc = brkt(fac*patt.phc.soc.mid,fac*patt.phc.soc.lo,fac*patt.phc.soc.hi),
+    Dpatt.bac = brkt(fac*Dpatt.bac.mid,fac*Dpatt.bac.lo,fac*Dpatt.bac.hi, ndp=0),
+    patt.bac.int = brkt(fac*patt.bac.int.mid,fac*patt.bac.int.lo,fac*patt.bac.int.hi, ndp=0),
+    patt.bac.soc = brkt(fac*patt.bac.soc.mid,fac*patt.bac.soc.lo,fac*patt.bac.soc.hi, ndp=0),
+    Dpttbtx = brkt(fac*Dpttbtx.mid,fac*Dpttbtx.lo,fac*Dpttbtx.hi),
+    pttbtx.int = brkt(fac*pttbtx.int.mid,fac*pttbtx.int.lo,fac*pttbtx.int.hi),
+    pttbtx.soc = brkt(fac*pttbtx.soc.mid,fac*pttbtx.soc.lo,fac*pttbtx.soc.hi),
+    # Dpttbtx = brkt(fac*Dpttbtx.mid,fac*Dpttbtx.lo,fac*Dpttbtx.hi),
+    # pttbtx.int = brkt(fac*pttbtx.int.mid,fac*pttbtx.int.lo,fac*pttbtx.int.hi),
+    # pttbtx.soc = brkt(fac*pttbtx.soc.mid,fac*pttbtx.soc.lo,fac*pttbtx.soc.hi),
+    Dpftbtx = brkt(fac*Dpftbtx.mid,fac*Dpftbtx.lo,fac*Dpftbtx.hi),
+    pftbtx.int = brkt(fac*pftbtx.int.mid,fac*pftbtx.int.lo,fac*pftbtx.int.hi),
+    pftbtx.soc = brkt(fac*pftbtx.soc.mid,fac*pftbtx.soc.lo,fac*pftbtx.soc.hi),
     Ddeaths = brkt(fac*Ddeaths.mid,fac*Ddeaths.lo,fac*Ddeaths.hi),
     deaths.int = brkt(fac*deaths.int.mid,fac*deaths.int.lo,fac*deaths.int.hi),
     deaths.soc = brkt(fac*deaths.soc.mid,fac*deaths.soc.lo,fac*deaths.soc.hi),
-    Dcost.screen = brkt(fac*Dcost.screen.mid,fac*Dcost.screen.lo,fac*Dcost.screen.hi),
-    cost.screen.int = brkt(fac*cost.screen.int.mid,fac*cost.screen.int.lo,fac*cost.screen.int.hi),
-    cost.screen.soc = brkt(fac*cost.screen.soc.mid,fac*cost.screen.soc.lo,fac*cost.screen.soc.hi),
-    Dcost.tpt = brkt(fac*Dcost.tpt.mid,fac*Dcost.tpt.lo,fac*Dcost.tpt.hi),
-    cost.tpt.int = brkt(fac*cost.tpt.int.mid,fac*cost.tpt.int.lo,fac*cost.tpt.int.hi),
-    cost.tpt.soc = brkt(fac*cost.tpt.soc.mid,fac*cost.tpt.soc.lo,fac*cost.tpt.soc.hi),
-    Dcost.prev.att = brkt(fac*Dcost.prev.att.mid,fac*Dcost.prev.att.lo,fac*Dcost.prev.att.hi),
-    cost.prev.att.int = brkt(fac*cost.prev.att.int.mid,fac*cost.prev.att.int.lo,fac*cost.prev.att.int.hi),
-    cost.prev.att.soc = brkt(fac*cost.prev.att.soc.mid,fac*cost.prev.att.soc.lo,fac*cost.prev.att.soc.hi),
-    Dcost.inc.att = brkt(fac*Dcost.inc.att.mid,fac*Dcost.inc.att.lo,fac*Dcost.inc.att.hi),
-    cost.inc.att.int = brkt(fac*cost.inc.att.int.mid,fac*cost.inc.att.int.lo,fac*cost.inc.att.int.hi),
-    cost.inc.att.soc = brkt(fac*cost.inc.att.soc.mid,fac*cost.inc.att.soc.lo,fac*cost.inc.att.soc.hi),
+    DLYL = brkt(fac*DLYL.mid,fac*DLYL.lo,fac*DLYL.hi),
+    LYL.int = brkt(fac*LYL.int.mid,fac*LYL.int.lo,fac*LYL.int.hi),
+    LYL.soc = brkt(fac*LYL.soc.mid,fac*LYL.soc.lo,fac*LYL.soc.hi),
+    DPHC.evaluated.cost = brkt(fac*DPHC.evaluated.cost.mid,fac*DPHC.evaluated.cost.lo,fac*DPHC.evaluated.cost.hi),
+    PHC.evaluated.cost.int = brkt(fac*PHC.evaluated.cost.int.mid,fac*PHC.evaluated.cost.int.lo,fac*PHC.evaluated.cost.int.hi),
+    PHC.evaluated.cost.soc = brkt(fac*PHC.evaluated.cost.soc.mid,fac*PHC.evaluated.cost.soc.lo,fac*PHC.evaluated.cost.soc.hi),
+    DDH.evaluated.cost = brkt(fac*DDH.evaluated.cost.mid,fac*DDH.evaluated.cost.lo,fac*DDH.evaluated.cost.hi),
+    DH.evaluated.cost.int = brkt(fac*DH.evaluated.cost.int.mid,fac*DH.evaluated.cost.int.lo,fac*DH.evaluated.cost.int.hi),
+    DH.evaluated.cost.soc = brkt(fac*DH.evaluated.cost.soc.mid,fac*DH.evaluated.cost.soc.lo,fac*DH.evaluated.cost.soc.hi),
+    Dcost.assessments = brkt(fac*Dcost.assessments.mid,fac*Dcost.assessments.lo,fac*Dcost.assessments.hi),
+    cost.assessments.int = brkt(fac*cost.assessments.int.mid,fac*cost.assessments.int.lo,fac*cost.assessments.int.hi),
+    cost.assessments.soc = brkt(fac*cost.assessments.soc.mid,fac*cost.assessments.soc.lo,fac*cost.assessments.soc.hi),
+    DPHC.treated.cost = brkt(fac*DPHC.treated.cost.mid,fac*DPHC.treated.cost.lo,fac*DPHC.treated.cost.hi),
+    PHC.treated.cost.int = brkt(fac*PHC.treated.cost.int.mid,fac*PHC.treated.cost.int.lo,fac*PHC.treated.cost.int.hi),
+    PHC.treated.cost.soc = brkt(fac*PHC.treated.cost.soc.mid,fac*PHC.treated.cost.soc.lo,fac*PHC.treated.cost.soc.hi),
+    DDH.treated.cost = brkt(fac*DDH.treated.cost.mid,fac*DDH.treated.cost.lo,fac*DDH.treated.cost.hi),
+    DH.treated.cost.int = brkt(fac*DH.treated.cost.int.mid,fac*DH.treated.cost.int.lo,fac*DH.treated.cost.int.hi),
+    DH.treated.cost.soc = brkt(fac*DH.treated.cost.soc.mid,fac*DH.treated.cost.soc.lo,fac*DH.treated.cost.soc.hi),
     Dcost = brkt(fac*Dcost.mid,fac*Dcost.lo,fac*Dcost.hi),
     cost.int = brkt(fac*cost.int.mid,fac*cost.int.lo,fac*cost.int.hi),
     cost.soc = brkt(fac*cost.soc.mid,fac*cost.soc.lo,fac*cost.soc.hi),
-    ICER.int=round(ICER.int,0)
+    ICER=round(ICER,0)
   )]
   
-  ## return value
+## return value
   list(outs=outs,pouts=pouts)
 }

@@ -119,10 +119,10 @@ AddOutcomes <- function(D){
 }
 
 ## names of stage counters
-stagecounters <- c('DH.presumptive','DH.evaluated','DH.treated',
-                   'PHC.presumptive','PHC.evaluated','PHC.treated')
+stagecounters <- c('DH.presumptive','DH.evaluated','DH.bacassess','DH.diagnosed','DH.treated',
+                   'PHC.presumptive','PHC.evaluated','PHC.bacassess','PHC.diagnosed','PHC.treated')
 scc <- paste0(stagecounters,'.cost')
-labdat <- c('p','cost', 'att', 'attend', stagecounters,scc)
+labdat <- c('p','cost', 'bacassess','dxc','dxb','bactbtx','att', 'attend', stagecounters,scc)
 
 ## === SOC
 SOC <- MSorg2tree(here('indata/SOCc.txt'))
@@ -132,10 +132,10 @@ print(SOC)
 SOC <- AddOutcomes(SOC)
 
 tree2file(SOC,filename = here('indata/CSV/SOCc.csv'),
-          'p','cost','deaths','lives','refers','dxc','dxb','att', 'attend',
+          'p','cost','deaths','lives','refers','bacassess','dxc','dxb','bactbtx','att', 'attend',
           'check',
-          'DH.presumptive','DH.evaluated','DH.treated',
-          'PHC.presumptive','PHC.evaluated','PHC.treated')
+          'DH.presumptive','DH.evaluated','DH.bacassess','DH.diagnosed','DH.treated',
+          'PHC.presumptive','PHC.evaluated','PHC.bacassess','PHC.diagnosed','PHC.treated')
 
 ## create version with probs/costs
 fn <- here('indata/CSV/SOCc1.csv')
@@ -147,10 +147,10 @@ if(file.exists(fn)){
   LabelFromData(SOC,labz[,..labdat]) #add label data
   ## save out
   tree2file(SOC,filename = here('indata/CSV/SOCc2.csv'),
-            'p','cost','deaths','lives','refers','dxc','dxb','att', 'attend',
+            'p','cost','deaths','lives','refers','bacassess','dxc','dxb','bactbtx','att', 'attend',
             'check',
-            'DH.presumptive','DH.evaluated','DH.treated',
-            'PHC.presumptive','PHC.evaluated','PHC.treated')
+            'DH.presumptive','DH.evaluated','DH.bacassess','DH.diagnosed','DH.treated',
+            'PHC.presumptive','PHC.evaluated','PHC.bacassess','PHC.diagnosed','PHC.treated')
 }
 
 ## NOTE this would ideally be moved up into the workflow above
@@ -176,10 +176,10 @@ INT <- Clone(SOC)
 INT$name <- 'Intervention'
 print(INT)
 tree2file(INT,filename = here('indata/CSV/INTc.csv'),
-          'p','cost','deaths','lives','refers','dxc','dxb','att', 'attend',
+          'p','cost','deaths','lives','refers','bacassess','dxc','dxb','bactbtx','att', 'attend',
           'check',
-          'DH.presumptive','DH.evaluated','DH.treated',
-          'PHC.presumptive','PHC.evaluated','PHC.treated')
+          'DH.presumptive','DH.evaluated','DH.bacassess','DH.diagnosed','DH.treated',
+          'PHC.presumptive','PHC.evaluated','PHC.bacassess','PHC.diagnosed','PHC.treated')
 
 ## create version with probs/costs
 fn <- here('indata/CSV/INTc1.csv')
@@ -191,10 +191,10 @@ if(file.exists(fn)){
   LabelFromData(INT,labz[,..labdat]) #add label data
   ## save out
   tree2file(INT,filename = here('indata/CSV/INTc2.csv'),
-            'p','cost','deaths','lives','refers','dxc','dxb','att', 'attend',
+            'p','cost','deaths','lives','refers','bacassess','dxc','dxb','bactbtx','att', 'attend',
             'check',
-            'DH.presumptive','DH.evaluated','DH.treated',
-            'PHC.presumptive','PHC.evaluated','PHC.treated')
+            'DH.presumptive','DH.evaluated','DH.bacassess','DH.diagnosed','DH.treated',
+            'PHC.presumptive','PHC.evaluated','PHC.bacassess','PHC.diagnosed','PHC.treated')
 }
 
 ## NOTE this would ideally be moved up into the workflow above
@@ -217,7 +217,7 @@ labz[,table(att,notx)]
 
 ## make functions
 fnmz <- c('check','cost','deaths','att','attend','notx',
-          'lives','refers','dxc','dxb',
+          'lives','refers','bacassess','dxc','dxb','bactbtx',
           stagecounters,
           scc)
 
