@@ -212,30 +212,30 @@ Standard of care                                                                
      ¦   ¦   ¦   ¦       °--No TB treatment                                      ,phc.ptltfu,0,0,0,0
      ¦   ¦   ¦   ¦           ¦--Survives                                         ,1-cfr.notx,0,1,0,1
      ¦   ¦   ¦   ¦           °--Dies                                             ,cfr.notx,0,1,0,1
-     ¦   ¦   ¦   ¦--TB diagnosed (clinical)                                      ,soc.phc.test*(1-soc.phc.ptbxUltra),0,0,0,0
+     ¦   ¦   ¦   ¦--TB diagnosed (clinical)                                      ,soc.dh.test*(1-soc.phc.ptbxUltra),0,0,0,0
      ¦   ¦   ¦   ¦   °--No TB treatment                                          ,phc.ptltfu,0,0,0,0
      ¦   ¦   ¦   ¦       ¦--Survives                                             ,1-cfr.notx,0,1,0,1
      ¦   ¦   ¦   ¦       °--Dies                                                 ,cfr.notx,0,1,0,1
-     ¦   ¦   ¦   °--No TB diagnosed                                              ,(1-soc.phc.test)*(1-soc.phc.ptbxUltra),0,0,0,0
-     ¦   ¦   ¦       ¦--Reassessment                                             ,1-phc.14phcltfu,0,0,0,0
-     ¦   ¦   ¦       ¦   °--Clinical & or bacteriological assessment*            ,1,cost.phc.examCXR,0,0,0
-     ¦   ¦   ¦       ¦       ¦--TB diagnosed (bacteriological)                   ,soc.phc.bact.tbdx,cost.Xpert,0,0,0
+     ¦   ¦   ¦   °--No TB diagnosed                                              ,(1-soc.dh.test)*(1-soc.phc.ptbxUltra),0,0,0,0
+     ¦   ¦   ¦       ¦--Reassessment                                             ,1-dh.14dhltfu,0,0,0,0
+     ¦   ¦   ¦       ¦   °--Clinical & or bacteriological assessment*            ,1,cost.dh.examCXR,0,0,0
+     ¦   ¦   ¦       ¦       ¦--TB diagnosed (bacteriological)                   ,soc.dh.bact.tbdx,cost.Xpert,0,0,0
      ¦   ¦   ¦       ¦       ¦   ¦--RifS-TB diagnosed                            ,1-prr,0,0,0,0
-     ¦   ¦   ¦       ¦       ¦   ¦   °--No TB treatment                          ,phc.ptltfu,0,0,0,0
+     ¦   ¦   ¦       ¦       ¦   ¦   °--No TB treatment                          ,dh.ptltfu,0,0,0,0
      ¦   ¦   ¦       ¦       ¦   ¦       ¦--Survives                             ,1-cfr.notx,0,1,0,1
      ¦   ¦   ¦       ¦       ¦   ¦       °--Dies                                 ,cfr.notx,0,1,0,1
      ¦   ¦   ¦       ¦       ¦   °--RifR-TB diagnosed                            ,prr,0,0,0,0
-     ¦   ¦   ¦       ¦       ¦       °--No TB treatment                          ,phc.ptltfu,0,0,0,0
+     ¦   ¦   ¦       ¦       ¦       °--No TB treatment                          ,dh.ptltfu,0,0,0,0
      ¦   ¦   ¦       ¦       ¦           ¦--Survives                             ,1-cfr.notx,0,1,0,1
      ¦   ¦   ¦       ¦       ¦           °--Dies                                 ,cfr.notx,0,1,0,1
-     ¦   ¦   ¦       ¦       ¦--TB diagnosed (clinical)                          ,soc.phc.test*(1-soc.phc.bact.tbdx),0,0,0,0
-     ¦   ¦   ¦       ¦       ¦   °--No TB treatment                              ,phc.ptltfu,0,0,0,0
+     ¦   ¦   ¦       ¦       ¦--TB diagnosed (clinical)                          ,soc.dh.test*(1-soc.dh.bact.tbdx),0,0,0,0
+     ¦   ¦   ¦       ¦       ¦   °--No TB treatment                              ,dh.ptltfu,0,0,0,0
      ¦   ¦   ¦       ¦       ¦       ¦--Survives                                 ,1-cfr.notx,0,1,0,1
      ¦   ¦   ¦       ¦       ¦       °--Dies                                     ,cfr.notx,0,1,0,1
-     ¦   ¦   ¦       ¦       °--No TB diagnosed                                  ,(1-soc.phc.test)*(1-soc.phc.bact.tbdx),0,0,0,0
+     ¦   ¦   ¦       ¦       °--No TB diagnosed                                  ,(1-soc.dh.test)*(1-soc.dh.bact.tbdx),0,0,0,0
      ¦   ¦   ¦       ¦           ¦--Survives                                     ,1-cfr.notx,0,1,0,1
      ¦   ¦   ¦       ¦           °--Dies                                         ,cfr.notx,0,1,0,1
-     ¦   ¦   ¦       °--No reassessment                                          ,phc.14phcltfu,0,0,0,0
+     ¦   ¦   ¦       °--No reassessment                                          ,dh.14dhltfu,0,0,0,0
      ¦   ¦   ¦           ¦--Survives                                             ,1-cfr.notx,0,1,0,1
      ¦   ¦   ¦           °--Dies                                                 ,cfr.notx,0,1,0,1
      ¦   ¦   °--Clinical exam + TrueNat                                          ,soc.phc.test*(1-soc.phc.fracUltra),cost.Truenat,0,0,0
@@ -248,30 +248,30 @@ Standard of care                                                                
      ¦   ¦       ¦       °--No TB treatment                                      ,phc.ptltfu,0,0,0,0
      ¦   ¦       ¦           ¦--Survives                                         ,1-cfr.notx,0,1,0,1
      ¦   ¦       ¦           °--Dies                                             ,cfr.notx,0,1,0,1
-     ¦   ¦       ¦--TB diagnosed (clinical)                                      ,soc.phc.test*(1-soc.phc.ptbxTrueNat),0,0,0,0
+     ¦   ¦       ¦--TB diagnosed (clinical)                                      ,soc.dh.test*(1-soc.phc.ptbxTrueNat),0,0,0,0
      ¦   ¦       ¦   °--No TB treatment                                          ,phc.ptltfu,0,0,0,0
      ¦   ¦       ¦       ¦--Survives                                             ,1-cfr.notx,0,1,0,1
      ¦   ¦       ¦       °--Dies                                                 ,cfr.notx,0,1,0,1
-     ¦   ¦       °--No TB diagnosed                                              ,(1-soc.phc.test)*(1-soc.phc.ptbxTrueNat),0,0,0,0
-     ¦   ¦           ¦--Reassessment                                             ,1-phc.14phcltfu,0,0,0,0
-     ¦   ¦           ¦   °--Clinical & or bacteriological assessment*            ,1,cost.phc.examCXR,0,0,0
-     ¦   ¦           ¦       ¦--TB diagnosed (bacteriological)                   ,soc.phc.bact.tbdx,cost.Truenat,0,0,0
+     ¦   ¦       °--No TB diagnosed                                              ,(1-soc.dh.test)*(1-soc.phc.ptbxTrueNat),0,0,0,0
+     ¦   ¦           ¦--Reassessment                                             ,1-dh.14dhltfu,0,0,0,0
+     ¦   ¦           ¦   °--Clinical & or bacteriological assessment*            ,1,cost.dh.examCXR,0,0,0
+     ¦   ¦           ¦       ¦--TB diagnosed (bacteriological)                   ,soc.dh.bact.tbdx,cost.Truenat,0,0,0
      ¦   ¦           ¦       ¦   ¦--RifS-TB diagnosed                            ,1-prr,0,0,0,0
-     ¦   ¦           ¦       ¦   ¦   °--No TB treatment                          ,phc.ptltfu,0,0,0,0
+     ¦   ¦           ¦       ¦   ¦   °--No TB treatment                          ,dh.ptltfu,0,0,0,0
      ¦   ¦           ¦       ¦   ¦       ¦--Survives                             ,1-cfr.notx,0,1,0,1
      ¦   ¦           ¦       ¦   ¦       °--Dies                                 ,cfr.notx,0,1,0,1
      ¦   ¦           ¦       ¦   °--RifR-TB diagnosed                            ,prr,0,0,0,0
-     ¦   ¦           ¦       ¦       °--No TB treatment                          ,phc.ptltfu,0,0,0,0
+     ¦   ¦           ¦       ¦       °--No TB treatment                          ,dh.ptltfu,0,0,0,0
      ¦   ¦           ¦       ¦           ¦--Survives                             ,1-cfr.notx,0,1,0,1
      ¦   ¦           ¦       ¦           °--Dies                                 ,cfr.notx,0,1,0,1
-     ¦   ¦           ¦       ¦--TB diagnosed (clinical)                          ,soc.phc.test*(1-soc.phc.bact.tbdx),0,0,0,0
-     ¦   ¦           ¦       ¦   °--No TB treatment                              ,phc.ptltfu,0,0,0,0
+     ¦   ¦           ¦       ¦--TB diagnosed (clinical)                          ,soc.dh.test*(1-soc.dh.bact.tbdx),0,0,0,0
+     ¦   ¦           ¦       ¦   °--No TB treatment                              ,dh.ptltfu,0,0,0,0
      ¦   ¦           ¦       ¦       ¦--Survives                                 ,1-cfr.notx,0,1,0,1
      ¦   ¦           ¦       ¦       °--Dies                                     ,cfr.notx,0,1,0,1
-     ¦   ¦           ¦       °--No TB diagnosed                                  ,(1-soc.phc.test)*(1-soc.phc.bact.tbdx),0,0,0,0
+     ¦   ¦           ¦       °--No TB diagnosed                                  ,(1-soc.dh.test)*(1-soc.dh.bact.tbdx),0,0,0,0
      ¦   ¦           ¦           ¦--Survives                                     ,1-cfr.notx,0,1,0,1
      ¦   ¦           ¦           °--Dies                                         ,cfr.notx,0,1,0,1
-     ¦   ¦           °--No reassessment                                          ,phc.14phcltfu,0,0,0,0
+     ¦   ¦           °--No reassessment                                          ,dh.14dhltfu,0,0,0,0
      ¦   ¦               ¦--Survives                                             ,1-cfr.notx,0,1,0,1
      ¦   ¦               °--Dies                                                 ,cfr.notx,0,1,0,1
      ¦   °--Not presumptive TB                                                   ,1-phc.presumed,0,0,0,0
