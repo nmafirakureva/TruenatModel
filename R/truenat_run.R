@@ -161,6 +161,8 @@ PD2 <- rbind(
 
 names(PD2)
 
+write.csv(PD1,file=here('indata/allparms.csv'))
+
 # convert into parameter object
 P <- parse.parmtable(PD1)             
 
@@ -185,6 +187,7 @@ if(SA=='artcov'){
 ## use these parameters to construct input data by attribute
 D0 <- makeAttributes(D0)
 D0[,sum(value),by=.(id, tb)] #CHECK
+D0[,sum(value),by=.(id, tb)][,mean(V1),by=tb] #CHECK
 
 ## read and make cost data
 rcsts <- CD
