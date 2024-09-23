@@ -60,6 +60,9 @@ CFRtxN <- function(age,hiv=0,art=0){
 ## summary(CFRtxN(1:1e3,hiv=1,P))
 ## summary(CFRtxN(1:1e3,hiv=1,art=1,P))
 
+
+
+
 ## add CFRs to data by side-effect
 AddCFRs <- function(D,P){
   ## d.cfr.notx & d.cfr.tx
@@ -70,6 +73,67 @@ AddCFRs <- function(D,P){
   D[,cfr.notx:=CFRtxN(age,hiv,art)]
 }
 
+## == LTBI infection probability
+#NB this is LTBI given not active: it is taken to be max(0,LTBI-coprev)
+ltbi.prev <- function(age,coprev,hinco=FALSE){
+        if(length(age)>1 & length(hinco)==1) hinco <- rep(hinco,length(age))
+        tmp <- P$LTBI04$r(length(age))
+        tmp[hinco] <- P$LTBI04hi$r(sum(hinco))
+        tmp[age>=5] <- P$LTBI514$r(sum(age>=5))
+        tmp[age>=5 & hinco] <- P$LTBI514hi$r(sum(age>=5 & hinco))
+        tmp
+        ## pmax(0,tmp - coprev) # already taken into account with decision tree
+}
+# ltbi.prev(1:10,0.1,hinco=TRUE)
+
+## progression probability
+progprob <- function(age,hiv=0,art=0){
+        if(length(age)>1 & length(hiv)==1) hiv <- rep(hiv,length(age))
+        if(length(age)>1 & length(art)==1) art <- rep(art,length(age))
+        ans <- P$prog04$r(length(age))
+        ans[age>=5] <- P$prog514$r(sum(age>=5))
+        if(any(hiv>0)){ #treat as IRR for escape
+                hr <- P$hivpi$r(sum(hiv>0))
+                ans[hiv>0] <- 1-(1-ans[hiv>0])^hr
+        }
+        if(any(art>0)){ #treat as IRR for escape
+                hr <- P$artp$r(sum(art>0))
+                ans[art>0] <- 1-(1-ans[art>0])^hr
+        }
+        ans
+}
+
+## add CFRs to data by side-effect
+AddProgProb <- function(D, P){
+  D[,p.tbdx.1yr:=progprob(age,hiv,art) * ltbi.prev(age,0)] #NOTE handling of coprev happens explicitly
+}
+
+## progprob(c(rep(3,5),rep(10,5)))
+
+
+## === IPT efficacy
+TPTrr <- function(age,hiv=0,
+                  tst='none'           #a flag for: given to TST+ or not
+){
+        if(length(age)>1 & length(hiv)==1) hiv <- rep(hiv,length(age))
+        if(tst=='none'){
+                ans <- P$tptRR$r(length(age))
+                ans[hiv>0] <- P$tptRRhivpos$r(sum(hiv>0))  #HIV+
+        } else {
+                ans <- P$tptRRhivpos$r(length(age))  #NOTE only applied to HIV-ves
+        }
+        ans
+}
+
+# TPTrr(1:10, P=P)
+# summary(TPTrr(runif(1e3),hiv=0)) #0.37
+# summary(TPTrr(runif(1e3),hiv=1)) #0.35
+# summary(TPTrr(runif(1e3),tst='yes')) #0.09
+AddTPTrr <- function(D,P){
+        D[,tptRR0:=TPTrr(age,hiv)]  #base efficacy of IPT
+        D[,tptRR1:=TPTrr(age,tst="+ve")]   #base efficacy of PT: TST+ve
+        D[,tptRR:=tptRR0] 
+}
 
 ## new parameters as part of reach work
 AddDetectionLabels <- function(D){
@@ -100,6 +164,8 @@ aCDR <- function(mn,ab){
 ## test <- eval(parse(text=INTtbprev),envir=D)
 ## tail(test)
 
+## D[,tmp:=0+(int.frac.bac.assess)*(0+(int.frac.bac.dx)*(1+(1)*(0+(1)*(0))+(1-int.frac.bac.dx)*(0+(1)*(0+(int.frac.bac.clin.dx)*(1+(1)*(0))+(int.frac.bac.noclin.dx*(1-int.frac.bac.clin.dx))*(0+(1)*(0))+((1-int.frac.bac.clin.dx)*(1-int.frac.bac.noclin.dx))*(0+(int.frac.bac.7d.clin.dx)*(1+(1)*(0))+(int.frac.bac.7d.noclin.dx*(1-int.frac.bac.7d.clin.dx))*(0+(1)*(0))+((1-int.frac.bac.7d.clin.dx)*(1-int.frac.bac.7d.noclin.dx))*(0)))))+(1-int.frac.bac.assess)*(0+(int.frac.clin.dx)*(1+(1)*(0))+(int.frac.noclin.dx*(1-int.frac.clin.dx))*(0+(1)*(0))+((1-int.frac.clin.dx)*(1-int.frac.noclin.dx))*(0+(int.frac.clin.7d.clin.dx)*(1+(1)*(0))+(int.frac.clin.7d.noclin.dx*(1-int.frac.clin.7d.clin.dx))*(0+(1)*(0))+((1-int.frac.clin.7d.clin.dx)*(1-int.frac.clin.7d.noclin.dx))*(0))))+(1-int.frac.symp.attending)*(0)]
+
 ## ========= DIAGNOSIS ===============
 
 ## function for combining sample modality with bacteriological test
@@ -113,17 +179,34 @@ TBbacsampletest <- function(samplepossible,testpos){
 AddSampleTests <- function(D){
   
   ## Bacteriological test availability
-  # D[,soc.dh.test:=rbeta(nrow(D),8.251046,5.500698)]
-  # D[,int.dh.test:=rbeta(nrow(D),8.251046,5.500698)] 
+  # use Odume et al., 2023 to approximate this
+  # Plot in Odume et al., 2023 suggests 
+  # 0-10% availability of Xpert Ultra in PHC
+  # ~20-100% availability of Xpert Ultra in DH
+  
+  # DH
+  # (p <- getAB(0.60, ((50-100)^2)/392^2))
+  # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
+  # summary(rbeta(1000, p$a, p$b))
+  # D[,soc.dh.test:=rbeta(nrow(D),2.85744,1.90496)]
+  D[,soc.dh.test:=rbeta(nrow(D),8.251046,5.500698)]
+  D[,int.dh.test:=rbeta(nrow(D),8.251046,5.500698)] 
   # D[,soc.dh.test:=1]
   # D[,int.dh.test:=1]
  
   # PHC
-  # D[,soc.phc.test:=rbeta(nrow(D),5.335947,172.5289)]
-  # D[,int.phc.test:=rbeta(nrow(D),8.251046,5.500698)]
-  # D[,int.phc.test:=0.6] # to increase this with Truenat introduction
-  # summary(D$int.phc.test)
+  # (p <- getAB(0.03, ((0-5)^2)/392^2))
+  # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
+  # summary(rbeta(1000, p$a, p$b))
+  D[,soc.phc.test:=rbeta(nrow(D),5.335947,172.5289)]
+  # D[,soc.phc.test:=0]
   
+  # (p <- getAB(0.60, ((20-100)^2)/392^2))
+  # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
+  # summary(rbeta(1000, p$a, p$b))
+  D[,int.phc.test:=rbeta(nrow(D),8.251046,5.500698)]
+  # D[,int.phc.test:=0.6] # to increase this with Truenat introduction
+  summary(D$int.phc.test)
   # Type of test available
   D[,soc.dh.fracUltra:=ifelse(age=='5-14',1,1)] # assume only Xpert is available in DH
   D[,int.dh.fracUltra:=ifelse(age=='5-14',1,1)]
@@ -134,6 +217,10 @@ AddSampleTests <- function(D){
   
   # Bacteriological test possibility
   # Test is only possible for children who can provide a sample
+  summary(D$soc.dh.xpert.u5)
+  # D[,soc.dh.fracUltra:=soc.dh.fracUltra*ifelse(age=='5-14',soc.dh.exp.sputum.o5,soc.dh.exp.sputum.u5)] # Actual children tested
+  # D[,int.dh.fracUltra:=int.dh.fracUltra*ifelse(age=='5-14',soc.dh.exp.sputum.o5,soc.dh.exp.sputum.u5)]
+  
   D[,soc.dh.test:=ifelse(age=='5-14',soc.dh.test*soc.dh.exp.sputum.o5,soc.dh.test*soc.dh.exp.sputum.u5)] # Actual children tested
   D[,int.dh.test:=ifelse(age=='5-14',int.dh.test*soc.dh.exp.sputum.o5,int.dh.test*soc.dh.exp.sputum.u5)]
   
@@ -143,6 +230,14 @@ AddSampleTests <- function(D){
   ## ------- X on sputum/GA -------
   ## People receiving Xpert Ultra testing [either sputum or GA], in those identified as having presumptive TB
 
+  
+  # TB dx bac+ on Xpert Ultra on sputum
+  # D[,soc.dh.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
+  # D[,int.dh.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
+  # 
+  # D[,soc.phc.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
+  # D[,int.phc.bact.tbdx:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
+  
   D[,soc.dh.ptbxUltra:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
   D[,int.dh.ptbxUltra:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
   
@@ -196,27 +291,26 @@ AddDataDrivenLabels <- function(D){
   # (p <- getAB(0.90, ((80-100)^2)/392^2))  
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
-  # D[,phc.presented :=rbeta(nrow(D),30.21696,3.35744)]
-  # D[,phc.presented :=0.75]
+  D[,phc.presented :=rbeta(nrow(D),30.21696,3.35744)]
   
   ## TB more likely to go to DH
   D[tb!='noTB' & age=='0-4',phc.presented:=1-iodds(OR.dh.if.TB.u5*odds(1-phc.presented))]
   D[tb!='noTB' & age!='0-4',phc.presented:=1-iodds(OR.dh.if.TB.o5*odds(1-phc.presented))]
   
-  # summary(D[,.(phc.presented),])
-  # (D[,.(mean(phc.presented)),by=tb])
+  summary(D[,.(phc.presented),])
+  (D[,.(mean(phc.presented)),by=tb])
   D[,dh.presented :=1-phc.presented]
   
   # presumptive TB
   # (p <- getAB(0.89, ((98-60)^2)/392^2))  #sensitivity:89% (95% CI 52% to 98%) based on https://doi.org/10.1002/14651858.CD013693.pub2
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
-  # D[,sens.sympt.screen:=rbeta(nrow(D),8.38209,1.035989)]
+  D[,sens.sympt.screen:=rbeta(nrow(D),8.38209,1.035989)]
   
   # (p <- getAB(0.69, ((51-83)^2)/392^2))  #specificity: 69% (95% CI 51% to 83%) based on https://doi.org/10.1002/14651858.CD013693.pub2
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
-  # D[,spec.sympt.screen:=rbeta(nrow(D),21.45787,9.640494)]
+  D[,spec.sympt.screen:=rbeta(nrow(D),21.45787,9.640494)]
   
   # PD2 <- setDT(PD2)
   # summary(PD2[,dh.presumed/phc.presumed])
@@ -240,17 +334,17 @@ AddDataDrivenLabels <- function(D){
   # (p <- getAB(0.5, ((0-80)^2)/392^2))  
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
-  # names(PD)
-  # PD |> filter(NAME=='soc.phc.rltfu')
-  # summary(D$soc.phc.rltfu)
+  names(PD)
+  PD |> filter(NAME=='soc.phc.rltfu')
+  summary(D$soc.phc.rltfu)
   # D[,soc.phc.rltfu:=1]
   D[,int.phc.rltfu:=soc.phc.rltfu]
   summary(D$int.phc.rltfu)
   
   # RIF resistance
-  # summary(D[,dh.prr]*100)
-  # summary(D[,phc.prr]*100)
-  # 26/2414
+  summary(D[,dh.prr]*100)
+  summary(D[,phc.prr]*100)
+  26/2414
   D[,prr:=dh.prr]
   
   # Bacteriological confirmation
@@ -258,8 +352,8 @@ AddDataDrivenLabels <- function(D){
   # D[,int.dh.bact.tbdx:=1-phc.att]
   
   # pre-treatment loss to follow-up
-  # (check <- names(D)[grep('u5.dh.att|o5.dh.att|u5.phc.att|o5.phc.att',names(D))])
-  # summary(D[,..check])
+  (check <- names(D)[grep('u5.dh.att|o5.dh.att|u5.phc.att|o5.phc.att',names(D))])
+  summary(D[,..check])
   D[,dh.ptltfu:=ifelse(age=='0-4',1-u5.dh.att,1-o5.dh.att)]
   D[,phc.ptltfu:=ifelse(age=='0-4',1-u5.phc.att,1-o5.phc.att)]
   summary(D$dh.ptltfu)
@@ -268,24 +362,6 @@ AddDataDrivenLabels <- function(D){
   # 
   D[,hivprev.u5:=frac.hiv]
   D[,hivprev.o5:=frac.hiv]
-  
-  # costs
-  D[,cost.phc.rsATT:=ifelse(age=='0-4',cost.phc.rsATT.04,cost.phc.rsATT.514)]
-  D[,cost.dh.rsATT:=ifelse(age=='0-4',cost.dh.rsATT.04,cost.dh.rsATT.514)]
-  
-  D[,cost.phc.rrATT:=ifelse(age=='0-4',cost.phc.rrATT.04,cost.phc.rrATT.514)]
-  D[,cost.dh.rrATT:=ifelse(age=='0-4',cost.dh.rrATT.04,cost.dh.rrATT.514)]
-  
-  # TODO: need % receiving X-ray, % samples referred for testing by facility too add these costs
-  
-  # X-ray
-  D[,cost.phc.evaluation:=cost.phc.evaluation+ifelse(age=='0-4',u5.phc.p.xray*cost.cxr.exam,o5.phc.p.xray*cost.cxr.exam)]
-  D[,cost.dh.evaluation:=cost.dh.evaluation+ifelse(age=='0-4',u5.dh.p.xray*cost.cxr.exam,o5.dh.p.xray*cost.cxr.exam)]
-  
-  # Currently assuming no cost of patient referral
-  D[,cost.phc.refer:=0]
-  # TODO: Check if ATT initiation and follow up costs are included
-  
 }
 
 ## combined function to add the labels to the tree prior to calculations
@@ -316,7 +392,7 @@ makeAttributes <- function(D){
     ## --- HIV/ART
     D[,hivprev.u5:=HHhivprev04]
     D[,hivprev.o5:=HHhivprev514]
-    D[,artcov:=1]
+    # D[,artcov:=0]
     D[,h01:=0]
     D[age!='5-14',h10:=hivprev.u5*(1-artcov)]
     D[age=='5-14',h10:=hivprev.o5*(1-artcov)]

@@ -31,7 +31,7 @@ shidneat <- as.character(as_sheets_id(yourl))
 Table2 <- fread(gh('outdata/table2.csv')) 
 
 write_sheet(Table2,shidneat,sheet="Tab2RAW")
-2
+
 # Supplementary results
 
 ## 0-4 years 
@@ -97,17 +97,14 @@ SAll
 write_sheet(SAll,shidneat,sheet="SAll")
 
 ## --- Main parameters table ---
-ParmsTable1 <- fread(gh('outdata/allparmsDistributionsClean.csv')) 
-ParmsTable2 <- fread(gh('outdata/allparmsFixed.csv')) 
-ParmsTable3 <- fread(gh('outdata/costparms.csv')) 
+# ParmsTable1 <- fread(gh('outdata/parameters1.csv')) 
 # 
-write_sheet(ParmsTable1,shidneat,sheet="ParmsTab1RAW")
-write_sheet(ParmsTable2,shidneat,sheet="ParmsTab2RAW")
-write_sheet(ParmsTable3,shidneat,sheet="ParmsTab3RAW")
+# write_sheet(ParmsTable1,shidneat,sheet="ParmsTab1RAW")
 # 
-# # # Other parameter tables
+# # Other parameter tables
 # flz1 <- c(
-#   "ParmsTable1.csv",   "ParmsTable2.csv","ParmsTable3.csv")
+#   "tableS1.csv",   "tableS2.csv","tableS2a.csv",
+#   "tableS3.csv", "tableS4.csv", "allpout2.csv")
 # for( fn in flz1)
 #   upload.to.sheets(here('outdata//'),fn,shidneat)
 

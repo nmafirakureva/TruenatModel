@@ -1,8 +1,8 @@
 iso3,threshold,value,country
-NGA,1x GDP,1621,Nigeria
-NGA,3x GDP,4863,Nigeria
-NGA,Y1a,239,Nigeria
-NGA,Y1b,1545,Nigeria
-NGA,Y2a,214,Nigeria
-NGA,Y2b,291,Nigeria
-NGA,0.5x GDP,810.5,Nigeria
+CMR,1x GDP,1499,Cameroon
+CMR,3x GDP,4498,Cameroon
+CMR,Y1a,49,Cameroon
+CMR,Y1b,654,Cameroon
+CMR,Y2a,112,Cameroon
+CMR,Y2b,140,Cameroon
+CMR,0.5x GDP,749.5,Cameroon
