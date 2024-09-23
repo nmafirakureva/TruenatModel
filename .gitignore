@@ -2,8 +2,9 @@
 .DS_Store
 
 # History files
-.Rhistory
+*.Rhistory
 .Rapp.history
+Rplots.pdf
 
 # Session Data files
 .RData*
