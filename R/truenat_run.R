@@ -75,7 +75,9 @@ PDC <- read.csv(here('indata/CASCP.csv')) #read in cascade parameters
 PDO <- read.csv(here('indata/CASCPO.csv')) #read in outcome parameters
 # AD <- read.csv(here('indata/DiagnosticAccuracy.csv')) #read in accuracy parameters
 # RD <- fread(gh('indata/RUParms.csv'))    #read resource use data
-CD <- fread(gh('indata/costs.csv'))    #read cost data
+CDD <- fread(gh('indata/costs.csv'))    #read dummy cost data
+CD <- fread(gh('indata/model_unit_costs.csv'))    #read actual cost data
+
 CET <- fread(gh('indata/CET.csv')) #read cost-effectiveness thresholds
 
 PDCO <- rbind(PDC,PDO, PDI, PDA) # combine cascade and outcome parameters
@@ -88,8 +90,8 @@ PDCO$parm <- gsub('prusumed', 'presumed', PDCO$parm)
 PDCO <- PDCO |> 
   # filter(grepl('att',parm)) |>
   mutate(parm = case_when(
-    age=='0-4'& grepl('att',parm) ~ paste0('u5.',parm),
-    age=='5-14'& grepl('att',parm) ~ paste0('o5.',parm),
+    age=='0-4'& grepl('att|xray',parm) ~ paste0('u5.',parm),
+    age=='5-14'& grepl('att|xray',parm) ~ paste0('o5.',parm),
     .default = parm))
 
 unique(PDCO$parm)
@@ -124,6 +126,26 @@ tmp <- tmp |>
 names(PDCO)
 names(PD0)
 
+costparms <- CD |> 
+  filter(!unit_cost %in% c('cost.art', 'cost.phc.referral', 'cost.antibiotics', 'cost.cxr.exam')) |>
+  
+  mutate(cost.m = round(cost.m, 2),
+         cost.sd = round(cost.sd, 2),
+         'Cost (SD)' = paste0(cost.m, ' (', cost.sd, ')'),
+         facility = ifelse(grepl('phc', unit_cost), 'PHC', 'Hospital'),
+         resource = gsub(' at.*|@PHC |@DH ', '',resource),
+         unit_cost = gsub('.phc|.dh', '', unit_cost)) |>
+  select(unit_cost, facility, resource, 'Cost (SD)') |>
+  pivot_wider(names_from = facility, values_from = 'Cost (SD)')  |>
+  mutate(
+    PHC = coalesce(PHC, Hospital)  # Fill missing PHC values with Hospital values
+  )
+
+
+write.csv(PDCO,file=here('outdata/allparmsFixed.csv'), row.names = FALSE)
+write.csv(PD1,file=here('outdata/allparmsDistributions.csv'), row.names = FALSE)
+write.csv(costparms,file=here('outdata/costparms.csv'), row.names = FALSE)
+
 unique(PDCO$parm)
 PD2 <- rbind(
   PDCO |> 
@@ -139,6 +161,8 @@ PD2 <- rbind(
 
 names(PD2)
 
+write.csv(PD1,file=here('indata/allparms.csv'))
+
 # convert into parameter object
 P <- parse.parmtable(PD1)             
 
@@ -149,6 +173,10 @@ D0 <- makePSA(nreps,P,dbls = list(c('cfrhivor','cfrartor')))
 
 # merge in fixed parameter
 names(PD2)
+
+# drop phc.presented
+PD2 <- PD2 |> 
+  select(-contains('.presented'))
 D0 <- cbind(D0, PD2)
 
 
@@ -159,9 +187,16 @@ if(SA=='artcov'){
 ## use these parameters to construct input data by attribute
 D0 <- makeAttributes(D0)
 D0[,sum(value),by=.(id, tb)] #CHECK
+D0[,sum(value),by=.(id, tb)][,mean(V1),by=tb] #CHECK
 
 ## read and make cost data
 rcsts <- CD
+(keep <- vrz[grepl('cost', vrz)])
+setdiff(keep, rcsts$unit_cost)
+setdiff(rcsts$unit_cost, keep)
+(keep2 <- unique(rcsts$unit_cost)[grepl('screening|evaluation|cxr|sample|ATT|antibiotics', unique(rcsts$unit_cost))])
+keep <- c(keep, keep2)
+rcsts <- rcsts[rcsts$unit_cost %in% keep,]
 
 names(CD)
 
@@ -171,9 +206,12 @@ rcsts <- setDT(rcsts)
 rcsts[is.na(rcsts)] <- 0 # some quick fix >> setting NA to 0
 rcsts[cost.sd==0,cost.sd:=cost.m/40]        #SD such that 95% UI ~ 10% of mean
 
-allcosts <- rcsts[,.(cost=parm, cost.m, cost.sd)]
+allcosts <- rcsts[,.(cost=unit_cost, cost.m, cost.sd)]
 
 C <- MakeCostData(allcosts,nreps)               # make cost PSA NOTE using CMR cost data
+
+names(D0)
+names(C)
 
 ## NOTE can re-run from here to implement changes to MakeTreeParms
 ## add cost data
@@ -428,12 +466,12 @@ for(cn in isoz){
   out2 <- out2[,lapply(.SD,function(x) sum(x*value)),.SDcols=tosum2,by=id] #sum against popn
 
   out3 <- dc[,..toget3]
-  ttbs <- out3[tb!='noTB',.(ttb=sum(value),tx=sum(att.soc*value)),by=id]
-  ttbi <- out3[tb!='noTB',.(ttb=sum(value),tx=sum(att.int*value)),by=id]
-  ftbs <- out3[tb=='noTB',.(ftb=sum(value),tx=sum(att.soc*value)),by=id]
-  ftbi <- out3[tb=='noTB',.(ftb=sum(value),tx=sum(att.int*value)),by=id]
-  ftbs.phc <- out3[tb=='noTB',.(fptx=sum(att.soc*value),fptxphc=sum(PHC.treated.soc*value)),by=id]
-  ftbi.phc <- out3[tb=='noTB',.(fptx=sum(att.int*value),fptxphc=sum(PHC.treated.int*value)),by=id]
+  ttbs <- out3[tb!='noTB',.(ttb=sum(value),tx=sum(att.soc*value)),by=id] # true TB SOC
+  ttbi <- out3[tb!='noTB',.(ttb=sum(value),tx=sum(att.int*value)),by=id] # true TB INT
+  ftbs <- out3[tb=='noTB',.(ftb=sum(value),tx=sum(att.soc*value)),by=id] # false TB SOC
+  ftbi <- out3[tb=='noTB',.(ftb=sum(value),tx=sum(att.int*value)),by=id] # false TB INT
+  ftbs.phc <- out3[tb=='noTB',.(fptx=sum(att.soc*value),fptxphc=sum(PHC.treated.soc*value)),by=id] # false TB @ PHC SOC
+  ftbi.phc <- out3[tb=='noTB',.(fptx=sum(att.int*value),fptxphc=sum(PHC.treated.int*value)),by=id] # false TB @ PHC INT
   ## % FP tx at PHC
   pfpphc <- data.table(id=ftbs.phc[,(id)], pfp.soc=ftbs.phc[,(fptxphc/fptx)],
                        pfp.int=ftbi.phc[,(fptxphc/fptx)],
@@ -560,7 +598,7 @@ GP <- ggplot(ceaclm[variable=='int' &
                  col=country,lty=Intervention)) +
   # guides(color = "none") +
   geom_line(show.legend = F) +
-  theme_classic(base_family = 'Times New Roman') +
+  theme_classic(base_family = 'Times-Roman') +
   theme(legend.position = 'top',legend.title = element_blank())+
   ggpubr::grids()+
   ylab('Probability cost-effective')+
@@ -598,7 +636,9 @@ GP <- ggplot(DS,aes(dDALY,dCost)) +
   # geom_text(data = icer, aes(y = cst, x = 0.7, label=paste0('ICER=', 'US$',icer, '/DALY averted')), size = 3)+
   geom_abline(data=CET[CET %in% c("0.5x GDP","1x GDP")],
               aes(intercept=0,slope=value,col=CET)) +
-  guides(col = guide_legend(reverse = TRUE)) +
+  scale_color_manual(name = "",
+                     values = c('#00BFC4', '#F8766D'),
+                     labels = c("0.5x GDP","1x GDP")) +
   # facet_wrap(~country, scales = 'free') +
   scale_y_continuous(label=comma) +
   xlab('Discounted disability adjusted life-years averted')+
@@ -612,11 +652,11 @@ ggsave(GP,file=fn1,w=6,h=5); ## ggsave(GP,file=fn2,w=10,h=10)
 ## PDF versions too big
 # 
 # 
-
-# # # run across all age levels
-# #
-# # # # ## --- 0-4 YEARS
-# #
+ICERS
+# # # # run across all age levels
+# # #
+# # # # # ## --- 0-4 YEARS
+# # #
 # # # Initialize lists to store results
 # # # containers & loop
 # # ## containers & loop
@@ -634,7 +674,7 @@ ggsave(GP,file=fn1,w=6,h=5); ## ggsave(GP,file=fn2,w=10,h=10)
 #   #     # Filter dataset for current age level
 #   ag = paste0(age)
 #   D_age <- dc[age==ag, ]
-#   
+# 
 #   ## --- Costs
 #   ## Drop previous costs
 #   cols_to_remove <- intersect(cnmz, names(D))
@@ -740,7 +780,7 @@ ggsave(GP,file=fn1,w=6,h=5); ## ggsave(GP,file=fn2,w=10,h=10)
 #   out2[,dx.int:=(dxc.int+dxb.int)];
 #   out2[,pdxphc.soc:=(PHC.diagnosed.soc)/dx.soc]; #TODO change/check
 #   out2[,pdxphc.int:=(PHC.diagnosed.int)/dx.int]; #TODO change/check
-#   
+# 
 #   out2[,pdxb.soc:=dxb.soc/(dxc.soc+dxb.soc)];
 #   out2[,pdxb.int:=dxb.int/(dxc.int+dxb.int)];
 #   # out2[,pdxb.soc:=dxb.soc];
@@ -859,7 +899,9 @@ ggsave(GP,file=fn1,w=6,h=5); ## ggsave(GP,file=fn2,w=10,h=10)
 #   # geom_text(data = icer, aes(y = cst, x = 0.7, label=paste0('ICER=', 'US$',icer, '/DALY averted')), size = 3)+
 #   geom_abline(data=CET[CET %in% c("0.5x GDP","1x GDP")],
 #               aes(intercept=0,slope=value,col=CET)) +
-#   guides(col = guide_legend(reverse = TRUE)) +
+#   scale_color_manual(name = "",
+#                      values = c('#00BFC4', '#F8766D'),
+#                      labels = c("0.5x GDP","1x GDP")) +
 #   # facet_wrap(~country, scales = 'free') +
 #   scale_y_continuous(label=comma) +
 #   xlab('Discounted disability adjusted life-years averted')+
@@ -886,11 +928,11 @@ ggsave(GP,file=fn1,w=6,h=5); ## ggsave(GP,file=fn2,w=10,h=10)
 #   # cn <- 'NGA'
 #   age='5-14'
 #   dc <- D[isoz==cn]
-#   
+# 
 #   ## Filter dataset for current age level
 #   ag = paste0(age)
 #   D_age <- dc[age==ag, ]
-#   
+# 
 #   cat('Running model for:', cn, 'at age:', age, 'years\n')
 # 
 #   ## --- Costs
@@ -998,7 +1040,7 @@ ggsave(GP,file=fn1,w=6,h=5); ## ggsave(GP,file=fn2,w=10,h=10)
 #   out2[,dx.int:=(dxc.int+dxb.int)];
 #   out2[,pdxphc.soc:=(PHC.diagnosed.soc)/dx.soc]; #TODO change/check
 #   out2[,pdxphc.int:=(PHC.diagnosed.int)/dx.int]; #TODO change/check
-#   
+# 
 #   out2[,pdxb.soc:=dxb.soc/(dxc.soc+dxb.soc)];
 #   out2[,pdxb.int:=dxb.int/(dxc.int+dxb.int)];
 #   # out2[,pdxb.soc:=dxb.soc];
@@ -1117,7 +1159,9 @@ ggsave(GP,file=fn1,w=6,h=5); ## ggsave(GP,file=fn2,w=10,h=10)
 #   # geom_text(data = icer, aes(y = cst, x = 0.7, label=paste0('ICER=', 'US$',icer, '/DALY averted')), size = 3)+
 #   geom_abline(data=CET[CET %in% c("0.5x GDP","1x GDP")],
 #               aes(intercept=0,slope=value,col=CET)) +
-#   guides(col = guide_legend(reverse = TRUE)) +
+#   scale_color_manual(name = "",
+#                     values = c('#00BFC4', '#F8766D'),
+#                     labels = c("0.5x GDP","1x GDP")) +
 #   # facet_wrap(~country, scales = 'free') +
 #   scale_y_continuous(label=comma) +
 #   xlab('Discounted disability adjusted life-years averted')+
@@ -1143,22 +1187,22 @@ allout$ICER
 # # # Iterate over all countries and age levels
 # for(cn in unique(isoz)) {
 #   for(age in unique(agelevels)) {
-#   
+#
 #     cat('Running model for:', cn, 'at age:', age, 'years \n')
-# 
+#
 #     dc <- D[isoz==cn]
-# 
+#
 #     #     # Filter dataset for current age level
 #     ag = paste0(age)
 #     D_age <- dc[age==ag, ]
-# 
+#
 #     ## --- Costs
 #     ## Drop previous costs
 #     cols_to_remove <- intersect(cnmz, names(D))
 #     D_age[, (cols_to_remove) := NULL]
 #     ## add cost data
 #     C <- MakeCostData(allcosts,nreps) #make cost PSA
-#   
+#
 #     D_age <- merge(D_age,C,by='id',all.x = TRUE)        #merge into PSA
 #     ## --- DALYs
 #     ## drop any that are there
@@ -1195,29 +1239,29 @@ allout$ICER
 #     out[,DcostperDdeaths:=-Dcost/Ddeaths]
 #     out[,DcostperDLYS0:=-Dcost/DLYL0]
 #     out[,DcostperDLYS:=-Dcost/DLYL]
-#     
+#
 #     ## summarize
 #     smy <- outsummary(out)
 #     outs <- smy$outs; pouts <- smy$pouts;
-# 
+#
 #     # Assign iso3 and age
 #     outs[, c('iso3', 'age') := .(cn, age)]
 #     pouts[, c('iso3', 'age') := .(cn, age)]
-#     
+#
 #     # Capture tabular
 #     allout[[paste(cn, age, sep = "_")]] <- outs
 #     allpout[[paste(cn, age, sep = "_")]] <- pouts
-#     
+#
 #     # Capture data for NMB
 #     NMB[[paste(cn, age, sep = "_")]] <- out[, .(iso3 = cn, age = age, DLYL, Dcost)]
-#     
+#
 #     # CEAC data
 #     ceacl[[paste(cn, age, sep = "_")]] <- data.table(
 #       iso3 = cn,
 #       age = age,
 #       int = make.ceac(out[, .(Q = -DLYL, P = Dcost)], lz),
 #       threshold = lz)
-#   
+#
 #     ## --- grather outcomes for Table 2
 #     out2 <- D_age[,..toget2]
 #     out2[,c(lyarm):=.(LYS*deaths.soc,LYS*deaths.int,
@@ -1267,7 +1311,7 @@ allout$ICER
 #     out2[,dx.int:=(dxc.int+dxb.int)];
 #     out2[,pdxphc.soc:=(PHC.diagnosed.soc)/dx.soc]; #TODO change/check
 #     out2[,pdxphc.int:=(PHC.diagnosed.int)/dx.int]; #TODO change/check
-#   
+#
 #     out2[,pdxb.soc:=dxb.soc/(dxc.soc+dxb.soc)];
 #     out2[,pdxb.int:=dxb.int/(dxc.int+dxb.int)];
 #     # out2[,pdxb.soc:=dxb.soc];
@@ -1308,18 +1352,18 @@ allout$ICER
 #     ## summarize
 #     smy2 <- Table2(out2) #NOTE set per 1000 index cases or HHs - adjust fac in contact_functions.R
 #     outs2 <- smy2$outs; pouts2 <- smy2$pouts;
-#     
+#
 #     # Assign iso3 and age
 #     outs2[, c('iso3', 'age') := .(cn, age)]
 #     pouts2[, c('iso3', 'age') := .(cn, age)]
-#     
+#
 #     # Capture tabular
 #     allout2[[paste(cn, age, sep = "_")]] <- outs2
 #     allpout2[[paste(cn, age, sep = "_")]] <- pouts2
 #     psaout2[[paste(cn, age, sep = "_")]] <- D_age
 #   }
 # }
-# 
+#
 # allout <- rbindlist(allout)
 # allpout <- rbindlist(allpout)
 # # allscout <- rbindlist(allscout)
@@ -1328,9 +1372,9 @@ allout$ICER
 # allout2 <- rbindlist(allout2)
 # allpout2 <- rbindlist(allpout2)
 # psaout2 <- rbindlist(psaout2)
-# 
+#
 # allout$ICER
-# 
+#
 # fwrite(allout,file=gh('outdata/alloutAges') + SA + '.csv')
 # fwrite(allpout,file=gh('outdata/allpoutAges') + SA + '.csv')
 # fwrite(allout2,file=gh('outdata/allout2Ages') + SA + '.csv')
@@ -1338,7 +1382,7 @@ allout$ICER
 # # fwrite(allscout,file=gh('outdata/allscoutAges') + SA + '.csv')
 # save(ceacl,file=gh('outdata/ceaclAges') + SA + '.Rdata')
 # save(NMB,file=gh('outdata/NMBAges') + SA + '.Rdata')
-# 
+#
 # ## CEAC plot
 # cbPalette <- c("#009E73", "#D55E00")
 # ceaclm <- melt(ceacl,id=c('iso3', 'age','threshold'))
@@ -1346,12 +1390,12 @@ allout$ICER
 # ## name key
 # ckey <- data.table(iso3=c('NGA'),
 #                    country=c('Nigeria'))
-# 
+#
 # ceaclm <- merge(ceaclm,ckey,by='iso3',all.x=TRUE)
-# 
-# ceaclm <- ceaclm |>  
-#   mutate(age = factor(age, levels = agelevels, labels = c('0-4 years','5-14 years'))) 
-# 
+#
+# ceaclm <- ceaclm |>
+#   mutate(age = factor(age, levels = agelevels, labels = c('0-4 years','5-14 years')))
+#
 # ## plot: int only
 # GP <- ggplot(ceaclm[variable=='int' &
 #                       iso3 %in% c('NGA')],
@@ -1366,31 +1410,31 @@ allout$ICER
 #   xlab('Cost-effectiveness threshold (USD/DALY averted)')+
 #   scale_colour_manual(values=cbPalette)
 # GP
-# 
+#
 # ggsave(GP,file=gh('plots/CEACAges') + SA + '.png',w=7,h=5)
-# 
+#
 # # # CE plane
 # DS <- psaout2[,.(cost.SOC=sum(cost.soc*value),
 #                cost.INT=sum(cost.int*value),
 #                lyl.SOC=sum(deaths.soc*value*LYS),
 #                lyl.INT=sum(deaths.int*value*LYS)),
 #             by=.(id, age)] #PSA summary
-# 
+#
 # DS[,dDALY:=lyl.SOC-lyl.INT]
 # DS[,dCost:=cost.INT-cost.SOC]
-# 
-# DS <- DS |>  
-#   mutate(Age = factor(age, levels = agelevels, labels = c('0-4 years','5-14 years'))) 
-# 
+#
+# DS <- DS |>
+#   mutate(Age = factor(age, levels = agelevels, labels = c('0-4 years','5-14 years')))
+#
 # # CET <- CET |>
 # #   rename(CET = threshold)
-# 
+#
 # icer <- DS %>%
 #   group_by(Age) %>%
 #   summarise(cst = mean(dCost),
 #             eff = mean(dDALY),
-#             icer = format(round(mean(dCost)/mean(dDALY)), big.mark = ',', scientific=FALSE)) 
-# 
+#             icer = format(round(mean(dCost)/mean(dDALY)), big.mark = ',', scientific=FALSE))
+#
 # GP <- ggplot(DS,aes(dDALY,dCost, color = Age)) +
 #   geom_vline(xintercept = 0)+
 #   geom_hline(yintercept = 0)+
@@ -1409,8 +1453,14 @@ allout$ICER
 #   ylab('Incremental cost (USD)')+
 #   theme(legend.position = "top")
 # if(!shell) GP
-# 
+#
 # fn1 <- glue(here('plots/CEplaneAges')) + SA + '.png'
 # ## fn2 <- glue(here('plots/CEplaneY')) + SAT + '.pdf'
 # ggsave(GP,file=fn1,w=6,h=5); ## ggsave(GP,file=fn2,w=10,h=10)
 # # ## PDF versions too big
+
+ceaclm$threshold[ceaclm$value>=0.5][1]
+ceaclm$threshold[ceaclm$value==max(ceaclm$value)][1]
+print(with(ceaclm,value[which(floor(threshold)==750)]))
+print(with(ceaclm,value[which(floor(threshold)==1501)]))
+print(with(ceaclm,value[which(floor(threshold)==1001)]))
