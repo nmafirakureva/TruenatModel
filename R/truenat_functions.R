@@ -1,8 +1,8 @@
 ## TODO questions:
-## 
+##
 ## - stool/sputum
 ## - flag assumption = groups for SA or pending data
-## 
+##
 
 ## ========= UTILITIES ===============
 logit <- function(x) log(odds(x))
@@ -111,74 +111,75 @@ TBbacsampletest <- function(samplepossible,testpos){
 ## function to add in the Sample/Test combined probabilities of TB dx
 ## works by side effect
 AddSampleTests <- function(D){
-  
+
   ## Bacteriological test availability
   # D[,soc.dh.test:=rbeta(nrow(D),8.251046,5.500698)]
-  # D[,int.dh.test:=rbeta(nrow(D),8.251046,5.500698)] 
+  # D[,int.dh.test:=rbeta(nrow(D),8.251046,5.500698)]
   # D[,soc.dh.test:=1]
   # D[,int.dh.test:=1]
- 
+
   # PHC
   # D[,soc.phc.test:=rbeta(nrow(D),5.335947,172.5289)]
   # D[,int.phc.test:=rbeta(nrow(D),8.251046,5.500698)]
   # D[,int.phc.test:=0.6] # to increase this with Truenat introduction
   # summary(D$int.phc.test)
-  
+
   # Type of test available
   D[,soc.dh.fracUltra:=ifelse(age=='5-14',1,1)] # assume only Xpert is available in DH
   D[,int.dh.fracUltra:=ifelse(age=='5-14',1,1)]
   summary(D$soc.dh.fracUltra)
-  
+
   D[,soc.phc.fracUltra:=ifelse(age=='5-14',0,0)] # assume no Xpert is not available in PHC
   D[,int.phc.fracUltra:=ifelse(age=='5-14',0,0)]
-  
+
   # Bacteriological test possibility
   # Test is only possible for children who can provide a sample
   D[,soc.dh.test:=ifelse(age=='5-14',soc.dh.test*soc.dh.exp.sputum.o5,soc.dh.test*soc.dh.exp.sputum.u5)] # Actual children tested
   D[,int.dh.test:=ifelse(age=='5-14',int.dh.test*soc.dh.exp.sputum.o5,int.dh.test*soc.dh.exp.sputum.u5)]
-  
+
   D[,soc.phc.fracUltra:=soc.phc.fracUltra*ifelse(age=='5-14',soc.phc.exp.sputum.o5,soc.phc.exp.sputum.u5)] # Actual children tested
   D[,int.phc.fracUltra:=int.phc.fracUltra*ifelse(age=='5-14',soc.phc.exp.sputum.o5,soc.phc.exp.sputum.u5)]
 
   ## ------- X on sputum/GA -------
   ## People receiving Xpert Ultra testing [either sputum or GA], in those identified as having presumptive TB
 
-  D[,soc.dh.ptbxUltra:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
-  D[,int.dh.ptbxUltra:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
-  
-  D[,soc.phc.ptbxUltra:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
-  D[,int.phc.ptbxUltra:=ifelse(tb=='TB',sens.xsputum,1-spec.xsputum)]
-  
+  ## TB dx bac+ on Xpert Ultra on sputum
+  D[,soc.dh.ptbxUltra:=ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
+  D[,int.dh.ptbxUltra:=ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
+
+  D[,soc.phc.ptbxUltra:=ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
+  D[,int.phc.ptbxUltra:=ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
+
   # TB dx bac+ on TrueNat on stool
-  D[,soc.dh.ptbxTrueNat:=ifelse(tb=='TB',sens.truenat.sputum,1-spec.truenat.sputum)]
-  D[,int.dh.ptbxTrueNat:=ifelse(tb=='TB',sens.truenat.sputum,1-spec.truenat.sputum)]
-  
-  D[,soc.phc.ptbxTrueNat:=ifelse(tb=='TB',sens.truenat.sputum,1-spec.truenat.sputum)]
-  D[,int.phc.ptbxTrueNat:=ifelse(tb=='TB',sens.truenat.sputum,1-spec.truenat.sputum)]
-  
+  D[,soc.dh.ptbxTrueNat:=ifelse(tb=='TB+',sens.truenat.sputum,1-spec.truenat.sputum)]
+  D[,int.dh.ptbxTrueNat:=ifelse(tb=='TB+',sens.truenat.sputum,1-spec.truenat.sputum)]
+
+  D[,soc.phc.ptbxTrueNat:=ifelse(tb=='TB+',sens.truenat.sputum,1-spec.truenat.sputum)]
+  D[,int.phc.ptbxTrueNat:=ifelse(tb=='TB+',sens.truenat.sputum,1-spec.truenat.sputum)]
+
   ## ------- clinical -------
   ## TB dx clinical, in bac- people identified as having presumptive TB
   D[,soc.dh.test.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
   D[,soc.phc.test.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
-  
+
   D[,int.dh.test.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
   D[,int.phc.test.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
-  
+
   ## TB dx clinical, in bac- people identified as having presumptive TB
   D[,soc.dh.notest.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
   D[,soc.phc.notest.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
-  
+
   D[,int.dh.notest.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
   D[,int.phc.notest.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
-  
+
   # reassessment
-  # D[,soc.dh.bact.tbdx:=ifelse(tb=='TB',sens.clin,1-spec.clin)]
-  D[,soc.dh.bact.tbdx:=ifelse(tb=='TB',sens.clin,1-spec.clin)] #Assume no bacteriological testing @ reassessment
-  D[,int.dh.bact.tbdx:=ifelse(tb=='TB',sens.clin,1-spec.clin)]
-  
-  D[,soc.phc.bact.tbdx:=ifelse(tb=='TB',sens.clin,1-spec.clin)]
-  D[,int.phc.bact.tbdx:=ifelse(tb=='TB',sens.clin,1-spec.clin)]
-  
+  # D[,soc.dh.bact.tbdx:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
+  D[,soc.dh.bact.tbdx:=ifelse(tb!='noTB',sens.clin,1-spec.clin)] #Assume no bacteriological testing @ reassessment
+  D[,int.dh.bact.tbdx:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
+
+  D[,soc.phc.bact.tbdx:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
+  D[,int.phc.bact.tbdx:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
+
 }
 
 ## ======= COMBINED LABELLER ===========
@@ -189,55 +190,55 @@ AddDataDrivenLabels <- function(D){
   # generate some parameters
   (check <- names(D)[grep('presumptive|presented',names(D))])
   summary(D[,..check])
-  
+
   # Initial presentation
-  
+
   # TB SPEED Decentralization assumed 90 (80-100) # https://doi.org/10.1016/j.eclinm.2024.102528
-  # (p <- getAB(0.90, ((80-100)^2)/392^2))  
+  # (p <- getAB(0.90, ((80-100)^2)/392^2))
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
   # D[,phc.presented :=rbeta(nrow(D),30.21696,3.35744)]
   # D[,phc.presented :=0.75]
-  
+
   ## TB more likely to go to DH
   D[tb!='noTB' & age=='0-4',phc.presented:=1-iodds(OR.dh.if.TB.u5*odds(1-phc.presented))]
   D[tb!='noTB' & age!='0-4',phc.presented:=1-iodds(OR.dh.if.TB.o5*odds(1-phc.presented))]
-  
+
   # summary(D[,.(phc.presented),])
   # (D[,.(mean(phc.presented)),by=tb])
   D[,dh.presented :=1-phc.presented]
-  
+
   # presumptive TB
   # (p <- getAB(0.89, ((98-60)^2)/392^2))  #sensitivity:89% (95% CI 52% to 98%) based on https://doi.org/10.1002/14651858.CD013693.pub2
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
   # D[,sens.sympt.screen:=rbeta(nrow(D),8.38209,1.035989)]
-  
+
   # (p <- getAB(0.69, ((51-83)^2)/392^2))  #specificity: 69% (95% CI 51% to 83%) based on https://doi.org/10.1002/14651858.CD013693.pub2
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
   # D[,spec.sympt.screen:=rbeta(nrow(D),21.45787,9.640494)]
-  
+
   # PD2 <- setDT(PD2)
   # summary(PD2[,dh.presumed/phc.presumed])
-  
+
   D[,fac:=dh.presumed/phc.presumed] # factor to scale down sensitivity of presuming at PHC
   ## specificity of presuming
   D[,dh.presumed:=ifelse(tb!='noTB',1,1-spec.sympt.screen)] #TODO:placeholder for now
   D[,phc.presumed:=ifelse(tb!='noTB',1,1-spec.sympt.screen)] #TODO:placeholder for now
-  
+
   # # TODO: check if this is OKAY
   # # Approach to normalizing everything to presumptive TB
   # D[,phc.presented:=phc.presented/phc.presumed]
   # D[,dh.presented:=dh.presented/dh.presumed]
   # D[,phc.presumed:=phc.presumed/phc.presumed]
   # D[,dh.presumed:=dh.presumed/dh.presumed]
-  # 
-  # D |> select(tb, phc.presented,dh.presented,phc.presumed,dh.presumed) |> 
+  #
+  # D |> select(tb, phc.presented,dh.presented,phc.presumed,dh.presumed) |>
   #   group_by(tb) |> summarise_all(mean)
   # hospital referral loss to follow-up
   # presumptive TB
-  # (p <- getAB(0.5, ((0-80)^2)/392^2))  
+  # (p <- getAB(0.5, ((0-80)^2)/392^2))
   # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
   # summary(rbeta(1000, p$a, p$b))
   # names(PD)
@@ -246,46 +247,46 @@ AddDataDrivenLabels <- function(D){
   # D[,soc.phc.rltfu:=1]
   D[,int.phc.rltfu:=soc.phc.rltfu]
   summary(D$int.phc.rltfu)
-  
+
   # RIF resistance
   # summary(D[,dh.prr]*100)
   # summary(D[,phc.prr]*100)
   # 26/2414
   D[,prr:=dh.prr]
-  
+
   # Bacteriological confirmation
   # D[,soc.dh.bact.tbdx:=1-dh.att]
   # D[,int.dh.bact.tbdx:=1-phc.att]
-  
+
   # pre-treatment loss to follow-up
   # (check <- names(D)[grep('u5.dh.att|o5.dh.att|u5.phc.att|o5.phc.att',names(D))])
   # summary(D[,..check])
   D[,dh.ptltfu:=ifelse(age=='0-4',1-u5.dh.att,1-o5.dh.att)]
   D[,phc.ptltfu:=ifelse(age=='0-4',1-u5.phc.att,1-o5.phc.att)]
   summary(D$dh.ptltfu)
-  
+
   D[,phc.14phcltfu:=dh.14dhltfu]
-  # 
+  #
   D[,hivprev.u5:=frac.hiv]
   D[,hivprev.o5:=frac.hiv]
-  
+
   # costs
   D[,cost.phc.rsATT:=ifelse(age=='0-4',cost.phc.rsATT.04,cost.phc.rsATT.514)]
   D[,cost.dh.rsATT:=ifelse(age=='0-4',cost.dh.rsATT.04,cost.dh.rsATT.514)]
-  
+
   D[,cost.phc.rrATT:=ifelse(age=='0-4',cost.phc.rrATT.04,cost.phc.rrATT.514)]
   D[,cost.dh.rrATT:=ifelse(age=='0-4',cost.dh.rrATT.04,cost.dh.rrATT.514)]
-  
+
   # TODO: need % receiving X-ray, % samples referred for testing by facility too add these costs
-  
+
   # X-ray
   D[,cost.phc.evaluation:=cost.phc.evaluation+ifelse(age=='0-4',u5.phc.p.xray*cost.cxr.exam,o5.phc.p.xray*cost.cxr.exam)]
   D[,cost.dh.evaluation:=cost.dh.evaluation+ifelse(age=='0-4',u5.dh.p.xray*cost.cxr.exam,o5.dh.p.xray*cost.cxr.exam)]
-  
+
   # Currently assuming no cost of patient referral
   D[,cost.phc.refer:=0]
   # TODO: Check if ATT initiation and follow up costs are included
-  
+
 }
 
 ## combined function to add the labels to the tree prior to calculations
@@ -338,7 +339,7 @@ makeAttributes <- function(D){
     D[tb=='noTB',value:=value*(1-tbi)]
     D[tb=='TB-',value:=value*tbi*ifelse(age=='5-14',1-Fbc.o5,1-Fbc.u5)] #NOTE assuming no TB outside of presumptive?
     D[tb=='TB+',value:=value*tbi*ifelse(age=='5-14',Fbc.o5,Fbc.u5)]
-    
+
     # D[tb=='noTB',value:=value*ifelse(age=='5-14',1-Fbc.o5,1-Fbc.u5)] #NOTE assuming no TB outside of presumptive?
     # D[tb=='TB',value:=value*ifelse(age=='5-14',Fbc.o5,Fbc.u5)]
     # D[,tbi:=NULL]                            #remove temporary variable
@@ -501,7 +502,7 @@ MLH <- function(dat){
 
 ## =========== output formatters
 outsummary <- function(out){
-  
+
   keep <- c('costperATT.soc','costperATT.int',
             'DcostperATT',
             'Ddeaths',
@@ -520,16 +521,16 @@ outsummary <- function(out){
   scr <- c(psoc.sc,pint.sc)
   scrm <- paste0(scr,'.mid')
   keep <- c(keep,scr)
-  
+
   ## mid/lo/hi
   outa <- MLH(out[,..keep])
-  
+
   ## more bespoke statistics
   outi <- out[,.(ICER= -mean(Dcost) / mean(DLYL))]
-  
+
   ## join
   outs <- do.call(cbind,list(outa$M,outa$L,outa$H,outi)) #combine
-  
+
   ## pretty version
   pouts <- outs[,.(costperATT.soc = brkt(costperATT.soc.mid,costperATT.soc.lo,costperATT.soc.hi),
                    costperATT.int = brkt(costperATT.int.mid,costperATT.int.lo,costperATT.int.hi),
@@ -557,10 +558,10 @@ outsummary <- function(out){
                    attPC = brkt(attPC.mid,attPC.lo,attPC.hi),
                    DattPC = brkt(attPC.mid-1e2,attPC.lo-1e2,attPC.hi-1e2),
                    ICER=round(ICER,0))]
-  
+
   ## staged costs
   scouts <- outa$M[,..scrm]
-  
+
   ## return value
   list(outs=outs,pouts=pouts,scouts=scouts)
 }
@@ -595,7 +596,7 @@ make.ceac <- function(CEA,lamz){
 
 ## =========== output formatters
 Table2 <- function(dat){
-  
+
   ## mid/lo/hi
   outa <- MLH(dat[,.(
     Dpttb,pttb.int,pttb.soc,
@@ -620,6 +621,7 @@ Table2 <- function(dat){
     Dpttbtx, pttbtx.int, pttbtx.soc,
     Dpftbtx, pftbtx.int, pftbtx.soc,
     Ddeaths,deaths.int,deaths.soc,
+    DLYL0,LYL0.int,LYL0.soc,
     DLYL,LYL.int,LYL.soc,
     DPHC.evaluated.cost,PHC.evaluated.cost.int,PHC.evaluated.cost.soc,
     DDH.evaluated.cost,DH.evaluated.cost.int,DH.evaluated.cost.soc,
@@ -628,13 +630,14 @@ Table2 <- function(dat){
     DDH.treated.cost,DH.treated.cost.int,DH.treated.cost.soc,
     Dcost,cost.int,cost.soc
   )])
-  
+
   ## more bespoke statistics
-  outi <- dat[,.(ICER= -mean(Dcost) / mean(DLYL))]
-  
+  outi <- dat[,.(ICER= -mean(Dcost) / mean(DLYL),
+                 DICER= -mean(Dcost) / mean(DLYL0))]
+
   ## join
   outs <- do.call(cbind,list(outa$M,outa$L,outa$H,outi)) #combine
-  
+
   ## pretty version
   fac <- 1e2 #per  per 100 children with presumptive TB (actually presenting for now)
   pouts <- outs[,.(
@@ -710,6 +713,9 @@ Table2 <- function(dat){
     DLYL = brkt(fac*DLYL.mid,fac*DLYL.lo,fac*DLYL.hi),
     LYL.int = brkt(fac*LYL.int.mid,fac*LYL.int.lo,fac*LYL.int.hi),
     LYL.soc = brkt(fac*LYL.soc.mid,fac*LYL.soc.lo,fac*LYL.soc.hi),
+    DLYL0 = brkt(fac*DLYL0.mid,fac*DLYL0.lo,fac*DLYL0.hi),
+    LYL0.int = brkt(fac*LYL0.int.mid,fac*LYL0.int.lo,fac*LYL0.int.hi),
+    LYL0.soc = brkt(fac*LYL0.soc.mid,fac*LYL0.soc.lo,fac*LYL0.soc.hi),
     DPHC.evaluated.cost = brkt(fac*DPHC.evaluated.cost.mid,fac*DPHC.evaluated.cost.lo,fac*DPHC.evaluated.cost.hi),
     PHC.evaluated.cost.int = brkt(fac*PHC.evaluated.cost.int.mid,fac*PHC.evaluated.cost.int.lo,fac*PHC.evaluated.cost.int.hi),
     PHC.evaluated.cost.soc = brkt(fac*PHC.evaluated.cost.soc.mid,fac*PHC.evaluated.cost.soc.lo,fac*PHC.evaluated.cost.soc.hi),
@@ -728,9 +734,10 @@ Table2 <- function(dat){
     Dcost = brkt(fac*Dcost.mid,fac*Dcost.lo,fac*Dcost.hi),
     cost.int = brkt(fac*cost.int.mid,fac*cost.int.lo,fac*cost.int.hi),
     cost.soc = brkt(fac*cost.soc.mid,fac*cost.soc.lo,fac*cost.soc.hi),
-    ICER=round(ICER,0)
+    ICER=round(ICER,0),
+    DICER=round(DICER,0)
   )]
-  
+
 ## return value
   list(outs=outs,pouts=pouts)
 }

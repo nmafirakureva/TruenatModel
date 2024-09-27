@@ -252,6 +252,7 @@ head(INT.F$checkfun(D)) # INT arm
 names(SOC.F)
 
 # TODO: check if this is OKAY
+
 # Approach to normalizing everything to presumptive TB
 D[, phc.presented := phc.presented / phc.presumed]
 D[, dh.presented := dh.presented / dh.presumed]
@@ -329,7 +330,9 @@ options(scipen = 999)
 fwrite(DRS, file = here("outdata/DRS.csv"))
 
 (dxb <- names(D)[grepl("dxb|dxc|att.soc|att.int", names(D))])
-summary(D[tb == "TB", ..dxb])
+tblevels
+summary(D[tb == "TB+", ..dxb])
+summary(D[tb == "TB-", ..dxb])
 summary(D[tb == "noTB", ..dxb])
 
 ## Cost-effectiveness analysis
@@ -562,6 +565,7 @@ for (cn in isoz) {
   out2[, Dpatt.phc := patt.phc.int - patt.phc.soc]
   out2[, Dpatt.bac := patt.bac.int - patt.bac.soc]
   out2[, DLYL := LYL.int - LYL.soc]
+  out2[, DLYL0 := LYL0.int - LYL0.soc]
   out2[, Ddeaths := deaths.int - deaths.soc]
   out2[, DPHC.evaluated.cost := PHC.evaluated.cost.int - PHC.evaluated.cost.soc]
   out2[, DDH.evaluated.cost := DH.evaluated.cost.int - DH.evaluated.cost.soc]
