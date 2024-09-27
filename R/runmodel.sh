@@ -1,6 +1,6 @@
 #!/bin/bash
 # NOTE (after changing shell flag in truenat_run.R to TRUE)
-# arg1: sensitivity analysis: none, base/lo/hi dscr, cdr (higher cdr for incidence), txd (completion of ATT/TPT included)
+# arg1: sensitivity analysis: none, base/lo/hi dscr, truenatbl (no Truenat testing @ PHC under SOC), truenatint (Truenat testing @ DH under INT), artcov (higher ART coverage), fracphc (low PHC presented)
 
 R --slave --vanilla --args <truenat_run.R hi & R --slave --vanilla --args <truenat_run.R lo &
 R --slave --vanilla --args <truenat_run.R truenatbl & R --slave --vanilla --args <truenat_run.R truenatint &
