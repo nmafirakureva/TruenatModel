@@ -5,6 +5,6 @@
 R --slave --vanilla --args <truenat_run.R hi & R --slave --vanilla --args <truenat_run.R lo &
 R --slave --vanilla --args <truenat_run.R truenatbl & R --slave --vanilla --args <truenat_run.R truenatint &
 R --slave --vanilla --args <truenat_run.R artcov & R --slave --vanilla --args <truenat_run.R fracphc &
-R --slave --vanilla --args <truenat_run.R none
+R --slave --vanilla --args <truenat_run.R rltfu & R --slave --vanilla --args <truenat_run.R none
 
 

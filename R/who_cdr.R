@@ -1,13 +1,18 @@
 # rm(list=ls())
 library(here)
 library(tidyverse)
+library(glue)
+library(data.table)
+
+gh <- function(x) glue(here(x))
 
 ## === making CDRs and getting some relevant HIV data ===
-whodir <- glue('~/Dropbox/WHO_TBreports/data2021/')
+isoz <- 'NGA' #Nigeria
+whodir <- glue(here('who_data/data2023//'))
 
 ## === load WHO notifications
 ## http://www.who.int/tb/country/data/download/en/
-fn <- whodir+'TB_notifications_2023-02-02.csv'
+fn <- whodir+'TB_notifications_2024-07-23.csv'
 N <- fread(fn)
 
 nmz <- paste0('newrel_',c('m04','f04',
@@ -27,7 +32,7 @@ NP <- NP[age %in% c('04','014')]
 NP
 
 ## === load WHO age-specific incidence estimates
-fn <- whodir+'TB_burden_age_sex_2023-02-02.csv'
+fn <- whodir+'TB_burden_age_sex_2024-07-23.csv'
 A <- fread(fn)
 
 ## keep only relevant categories
@@ -45,9 +50,9 @@ A <- A[iso3 %in% isoz]
 A
 
 ## HIV
-fn <- whodir+'TB_burden_countries_2023-02-02.csv'
+fn <- here('who_data/data2024/TB_burden_countries_2025-01-17.csv')
 H <- fread(fn)
-H <- H[year==max(year),.(iso3,e_tbhiv_prct,e_tbhiv_prct_lo,e_tbhiv_prct_hi)]
+H <- H[year==unique(A$year),.(iso3,e_tbhiv_prct,e_tbhiv_prct_lo,e_tbhiv_prct_hi)]
 H <- H[iso3 %in% isoz]
 H[,hiv:=e_tbhiv_prct/100]
 H[,hiv.sd:=(e_tbhiv_prct_hi-e_tbhiv_prct_lo)/392] #adults of course
@@ -58,7 +63,7 @@ hfn <- here('outdata/H.Rdata')
 save(H,file=hfn)
 
 ## HIV/ART
-fn <- whodir+'TB_notifications_2023-02-02.csv'
+fn <- whodir+'TB_notifications_2024-07-23.csv'
 HA <- fread(fn)
 HA <- HA[iso3 %in% isoz & year==max(year),.(iso3,newrel_hivtest,newrel_hivpos,newrel_art)]
 HA[,.(iso3,newrel_hivpos/newrel_hivtest,newrel_art/newrel_hivpos)]

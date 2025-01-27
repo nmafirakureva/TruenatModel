@@ -9,7 +9,7 @@ if (shell) {
     SA <- ""
   }
 } else { # set by hand
-  rm(list = ls()) # clear all
+  # rm(list = ls()) # clear all
   shell <- FALSE # whether running from shell script or not
   ## sensitivity analyses (mostly for PT):
   ## '' = basecase
@@ -18,7 +18,7 @@ if (shell) {
   ## 'truenatint' = Truenat testing @ DH under INT
   ## 'artcov' = higher ART coverage
   ## 'fracphc' = low PHC presented
-  sacases <- c("", "lo", "hi", "truenatbl", "truenatint", "artcov", "fracphc")
+  sacases <- c("", "lo", "hi", "truenatbl", "truenatint", "artcov", "fracphc", "rltfu")
   SA <- sacases[1]
 }
 
@@ -235,6 +235,10 @@ if (SA == "fracphc") {
   D[, dh.presented := 1 - phc.presented]
 }
 
+if (SA == "rltfu") {
+  D[, soc.phc.rltfu := 0.80] # higher referral LTFU
+}
+
 ## compute other parameters (adds by side-effect)
 MakeTreeParms(D, P)
 
@@ -244,6 +248,7 @@ MakeTreeParms(D, P)
 D[, sum(value), by = .(id)] # CHECK
 D[, sum(value), by = .(id, age)] # CHECK
 D[, sum(value), by = .(id, age, tb)] # CHECK
+D[, sum(value), by = .(id, tb)] # CHECK
 
 ## check for leaks
 head(SOC.F$checkfun(D)) # SOC arm
@@ -252,6 +257,11 @@ head(INT.F$checkfun(D)) # INT arm
 names(SOC.F)
 
 # TODO: check if this is OKAY
+D |>
+  select(tb, phc.presented, dh.presented, phc.presumed, dh.presumed) |>
+  group_by(tb) |>
+  summarise_all(mean)
+
 
 # Approach to normalizing everything to presumptive TB
 D[, phc.presented := phc.presented / phc.presumed]
@@ -267,6 +277,9 @@ D |>
 ## === RUN MODEL
 arms <- c("SOC", "INT")
 D <- runallfuns(D, arm = arms) # appends anwers
+D[, sum(value), by = .(id, tb)] # CHECK
+
+head(SOC.F$checkfun(D))
 
 ## restricted trees:
 D[["soc_att_check"]] <- SOC.att.F$checkfun(D)
@@ -393,12 +406,20 @@ toget2 <- c(
 toget3 <- c(
   "id", "value", "tb",
   "bacassess.soc", "bacassess.int",
+  'dxc.soc', 'dxc.int',
   "dxb.soc", "dxb.int",
   "att.soc", "att.int",
   "PHC.treated.soc", "PHC.treated.int"
 )
 
 tosum2 <- c(setdiff(toget2, notwt), lyarm)
+tosum3 <- c(
+  "bacassess.soc", "bacassess.int",
+  'dxc.soc', 'dxc.int',
+  "dxb.soc", "dxb.int",
+  "att.soc", "att.int",
+  "PHC.treated.soc", "PHC.treated.int"
+)
 
 ## heuristic to scale top value for thresholds:
 heur <- c("id", "value", "deaths.int", "deaths.soc")
@@ -483,6 +504,7 @@ for (cn in isoz) {
     threshold = lz
   )
 
+
   ## --- grather outcomes for Table 2
   out2 <- dc[, ..toget2]
   out2[, c(lyarm) := .(
@@ -495,12 +517,14 @@ for (cn in isoz) {
   out2 <- out2[, lapply(.SD, function(x) sum(x * value)), .SDcols = tosum2, by = id] # sum against popn
 
   out3 <- dc[, ..toget3]
+  out3[,dx.soc:=dxb.soc+dxc.soc]
+  out3[,dx.int:=dxb.int+dxc.int]
   ttbs <- out3[tb != "noTB", .(ttb = sum(value), tx = sum(att.soc * value)), by = id] # true TB SOC
   ttbi <- out3[tb != "noTB", .(ttb = sum(value), tx = sum(att.int * value)), by = id] # true TB INT
   ftbs <- out3[tb == "noTB", .(ftb = sum(value), tx = sum(att.soc * value)), by = id] # false TB SOC
   ftbi <- out3[tb == "noTB", .(ftb = sum(value), tx = sum(att.int * value)), by = id] # false TB INT
-  ftbs.phc <- out3[tb == "noTB", .(fptx = sum(att.soc * value), fptxphc = sum(PHC.treated.soc * value)), by = id] # false TB @ PHC SOC
-  ftbi.phc <- out3[tb == "noTB", .(fptx = sum(att.int * value), fptxphc = sum(PHC.treated.int * value)), by = id] # false TB @ PHC INT
+  ftbs.phc <- out3[tb == "noTB", .(fptx = sum(att.soc), fptxphc = sum(PHC.treated.soc * value)), by = id] # false TB @ PHC SOC
+  ftbi.phc <- out3[tb == "noTB", .(fptx = sum(att.int), fptxphc = sum(PHC.treated.int * value)), by = id] # false TB @ PHC INT
   ## % FP tx at PHC
   pfpphc <- data.table(
     id = ftbs.phc[, (id)], pfp.soc = ftbs.phc[, (fptxphc / fptx)],
@@ -541,7 +565,7 @@ for (cn in isoz) {
   out2[, cost.assessments.soc := DH.evaluated.cost.soc + PHC.evaluated.cost.soc]
   out2[, cost.assessments.int := DH.evaluated.cost.int + PHC.evaluated.cost.int]
   out2[, patt.phc.soc := PHC.treated.soc / att.soc]
-  out2[, patt.phc.int := DH.treated.int / att.int]
+  out2[, patt.phc.int := PHC.treated.int / att.int]
   out2[, patt.bac.soc := bactbtx.soc / att.soc]
   out2[, patt.bac.int := bactbtx.int / att.int]
 
@@ -712,3 +736,5 @@ allout$ICER
 
 ceaclm$threshold[ceaclm$value >= 0.5][1]
 ceaclm$threshold[ceaclm$value == max(ceaclm$value)][1]
+
+cat("100% Done")

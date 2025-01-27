@@ -113,42 +113,30 @@ TBbacsampletest <- function(samplepossible,testpos){
 AddSampleTests <- function(D){
 
   ## Bacteriological test availability
-  # D[,soc.dh.test:=rbeta(nrow(D),8.251046,5.500698)]
-  # D[,int.dh.test:=rbeta(nrow(D),8.251046,5.500698)]
-  # D[,soc.dh.test:=1]
-  # D[,int.dh.test:=1]
-
-  # PHC
-  # D[,soc.phc.test:=rbeta(nrow(D),5.335947,172.5289)]
-  # D[,int.phc.test:=rbeta(nrow(D),8.251046,5.500698)]
-  # D[,int.phc.test:=0.6] # to increase this with Truenat introduction
-  # summary(D$int.phc.test)
 
   # Type of test available
   D[,soc.dh.fracUltra:=ifelse(age=='5-14',1,1)] # assume only Xpert is available in DH
   D[,int.dh.fracUltra:=ifelse(age=='5-14',1,1)]
   summary(D$soc.dh.fracUltra)
 
-  D[,soc.phc.fracUltra:=ifelse(age=='5-14',0,0)] # assume no Xpert is not available in PHC
-  D[,int.phc.fracUltra:=ifelse(age=='5-14',0,0)]
+  D[,soc.phc.fracUltra:=ifelse(age=='5-14',1,1)] # assume only Xpert is available in PHC
+  D[,int.phc.fracUltra:=ifelse(age=='5-14',soc.phc.test*soc.phc.fracUltra,soc.phc.test*soc.phc.fracUltra)]
 
   # Bacteriological test possibility
   # Test is only possible for children who can provide a sample
-  D[,soc.dh.test:=ifelse(age=='5-14',soc.dh.test*soc.dh.exp.sputum.o5,soc.dh.test*soc.dh.exp.sputum.u5)] # Actual children tested
-  D[,int.dh.test:=ifelse(age=='5-14',int.dh.test*soc.dh.exp.sputum.o5,int.dh.test*soc.dh.exp.sputum.u5)]
+  D[,dh.Ultra.tested:=ifelse(age=='5-14',soc.dh.exp.sputum.o5,soc.dh.exp.sputum.u5)] # Actual children tested
+  D[,phc.Ultra.tested:=ifelse(age=='5-14',soc.phc.exp.sputum.o5,soc.phc.exp.sputum.u5)]
 
-  D[,soc.phc.fracUltra:=soc.phc.fracUltra*ifelse(age=='5-14',soc.phc.exp.sputum.o5,soc.phc.exp.sputum.u5)] # Actual children tested
-  D[,int.phc.fracUltra:=int.phc.fracUltra*ifelse(age=='5-14',soc.phc.exp.sputum.o5,soc.phc.exp.sputum.u5)]
 
   ## ------- X on sputum/GA -------
-  ## People receiving Xpert Ultra testing [either sputum or GA], in those identified as having presumptive TB
+  ## children receiving Xpert Ultra testing [either sputum or GA], in those identified as having presumptive TB
 
   ## TB dx bac+ on Xpert Ultra on sputum
-  D[,soc.dh.ptbxUltra:=ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
-  D[,int.dh.ptbxUltra:=ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
+  D[,soc.dh.ptbxUltra:=dh.Ultra.tested*ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
+  D[,int.dh.ptbxUltra:=dh.Ultra.tested*ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
 
-  D[,soc.phc.ptbxUltra:=ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
-  D[,int.phc.ptbxUltra:=ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
+  D[,soc.phc.ptbxUltra:=phc.Ultra.tested*ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
+  D[,int.phc.ptbxUltra:=phc.Ultra.tested*ifelse(tb=='TB+',sens.xsputum,1-spec.xsputum)]
 
   # TB dx bac+ on TrueNat on stool
   D[,soc.dh.ptbxTrueNat:=ifelse(tb=='TB+',sens.truenat.sputum,1-spec.truenat.sputum)]
@@ -158,14 +146,14 @@ AddSampleTests <- function(D){
   D[,int.phc.ptbxTrueNat:=ifelse(tb=='TB+',sens.truenat.sputum,1-spec.truenat.sputum)]
 
   ## ------- clinical -------
-  ## TB dx clinical, in bac- people identified as having presumptive TB
+  ## TB dx clinical, in bac- children identified as having presumptive TB
   D[,soc.dh.test.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
   D[,soc.phc.test.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
 
   D[,int.dh.test.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
   D[,int.phc.test.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
 
-  ## TB dx clinical, in bac- people identified as having presumptive TB
+  ## TB dx clinical, in in untested children identified as having presumptive TB
   D[,soc.dh.notest.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
   D[,soc.phc.notest.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
 
@@ -173,12 +161,18 @@ AddSampleTests <- function(D){
   D[,int.phc.notest.ptbc:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
 
   # reassessment
-  # D[,soc.dh.bact.tbdx:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
-  D[,soc.dh.bact.tbdx:=ifelse(tb!='noTB',sens.clin,1-spec.clin)] #Assume no bacteriological testing @ reassessment
-  D[,int.dh.bact.tbdx:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
+  # TB dx clinical at 7-day reassessment, in children bac- clin- in previous DH testing
+  D[,soc.dh.bact.tbdxUltra:=soc.dh.test*soc.dh.fracUltra*dh.Ultra.tested*ifelse(tb!='noTB',sens.xsputum,1-spec.xsputum)] # depends on test availability & sample possibility
+  D[,int.dh.bact.tbdxUltra:=int.dh.test*int.dh.fracUltra*dh.Ultra.tested*ifelse(tb!='noTB',sens.xsputum,1-spec.xsputum)]
 
-  D[,soc.phc.bact.tbdx:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
-  D[,int.phc.bact.tbdx:=ifelse(tb!='noTB',sens.clin,1-spec.clin)]
+  D[,soc.phc.bact.tbdxUltra:=soc.phc.test*soc.phc.fracUltra*phc.Ultra.tested*ifelse(tb!='noTB',sens.xsputum,1-spec.xsputum)] # depends on test availability&sample possibility
+  D[,int.phc.bact.tbdxUltra:=int.phc.test*int.phc.fracUltra*phc.Ultra.tested*ifelse(tb!='noTB',sens.xsputum,1-spec.xsputum)]
+
+  D[,soc.dh.bact.tbdxTrueNat:=ifelse(tb!='noTB',sens.truenat.sputum,1-spec.truenat.sputum)]
+  D[,int.dh.bact.tbdxTrueNat:=ifelse(tb!='noTB',sens.truenat.sputum,1-spec.truenat.sputum)]
+
+  D[,soc.phc.bact.tbdxTrueNat:=ifelse(tb!='noTB',sens.truenat.sputum,1-spec.truenat.sputum)]
+  D[,int.phc.bact.tbdxTrueNat:=ifelse(tb!='noTB',sens.truenat.sputum,1-spec.truenat.sputum)]
 
 }
 
@@ -193,74 +187,25 @@ AddDataDrivenLabels <- function(D){
 
   # Initial presentation
 
-  # TB SPEED Decentralization assumed 90 (80-100) # https://doi.org/10.1016/j.eclinm.2024.102528
-  # (p <- getAB(0.90, ((80-100)^2)/392^2))
-  # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
-  # summary(rbeta(1000, p$a, p$b))
-  # D[,phc.presented :=rbeta(nrow(D),30.21696,3.35744)]
-  # D[,phc.presented :=0.75]
-
   ## TB more likely to go to DH
   D[tb!='noTB' & age=='0-4',phc.presented:=1-iodds(OR.dh.if.TB.u5*odds(1-phc.presented))]
   D[tb!='noTB' & age!='0-4',phc.presented:=1-iodds(OR.dh.if.TB.o5*odds(1-phc.presented))]
-
-  # summary(D[,.(phc.presented),])
-  # (D[,.(mean(phc.presented)),by=tb])
   D[,dh.presented :=1-phc.presented]
 
-  # presumptive TB
-  # (p <- getAB(0.89, ((98-60)^2)/392^2))  #sensitivity:89% (95% CI 52% to 98%) based on https://doi.org/10.1002/14651858.CD013693.pub2
-  # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
-  # summary(rbeta(1000, p$a, p$b))
-  # D[,sens.sympt.screen:=rbeta(nrow(D),8.38209,1.035989)]
-
-  # (p <- getAB(0.69, ((51-83)^2)/392^2))  #specificity: 69% (95% CI 51% to 83%) based on https://doi.org/10.1002/14651858.CD013693.pub2
-  # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
-  # summary(rbeta(1000, p$a, p$b))
-  # D[,spec.sympt.screen:=rbeta(nrow(D),21.45787,9.640494)]
-
-  # PD2 <- setDT(PD2)
-  # summary(PD2[,dh.presumed/phc.presumed])
-
   D[,fac:=dh.presumed/phc.presumed] # factor to scale down sensitivity of presuming at PHC
+
   ## specificity of presuming
   D[,dh.presumed:=ifelse(tb!='noTB',1,1-spec.sympt.screen)] #TODO:placeholder for now
   D[,phc.presumed:=ifelse(tb!='noTB',1,1-spec.sympt.screen)] #TODO:placeholder for now
 
-  # # TODO: check if this is OKAY
-  # # Approach to normalizing everything to presumptive TB
-  # D[,phc.presented:=phc.presented/phc.presumed]
-  # D[,dh.presented:=dh.presented/dh.presumed]
-  # D[,phc.presumed:=phc.presumed/phc.presumed]
-  # D[,dh.presumed:=dh.presumed/dh.presumed]
-  #
-  # D |> select(tb, phc.presented,dh.presented,phc.presumed,dh.presumed) |>
-  #   group_by(tb) |> summarise_all(mean)
-  # hospital referral loss to follow-up
-  # presumptive TB
-  # (p <- getAB(0.5, ((0-80)^2)/392^2))
-  # curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
-  # summary(rbeta(1000, p$a, p$b))
-  # names(PD)
-  # PD |> filter(NAME=='soc.phc.rltfu')
-  # summary(D$soc.phc.rltfu)
-  # D[,soc.phc.rltfu:=1]
+  # Referral to DH LTFU
   D[,int.phc.rltfu:=soc.phc.rltfu]
-  summary(D$int.phc.rltfu)
 
   # RIF resistance
-  # summary(D[,dh.prr]*100)
-  # summary(D[,phc.prr]*100)
-  # 26/2414
   D[,prr:=dh.prr]
 
-  # Bacteriological confirmation
-  # D[,soc.dh.bact.tbdx:=1-dh.att]
-  # D[,int.dh.bact.tbdx:=1-phc.att]
-
   # pre-treatment loss to follow-up
-  # (check <- names(D)[grep('u5.dh.att|o5.dh.att|u5.phc.att|o5.phc.att',names(D))])
-  # summary(D[,..check])
+
   D[,dh.ptltfu:=ifelse(age=='0-4',1-u5.dh.att,1-o5.dh.att)]
   D[,phc.ptltfu:=ifelse(age=='0-4',1-u5.phc.att,1-o5.phc.att)]
   summary(D$dh.ptltfu)
@@ -313,7 +258,7 @@ makeAttributes <- function(D){
     D <- D[rep(1:nrow(D),each=nrow(cofx))] #expand out data
     D[,names(cofx):=cofx[rep(1:nrow(cofx),nrep),]]
     ## --- age
-    D[,value:=ifelse(age=='5-14',1-dh.fracO,dh.fracO)] #NOTE value first set here
+    D[,value:=ifelse(age!='5-14',1-dh.fracO,dh.fracO)] #NOTE value first set here
     ## --- HIV/ART
     D[,hivprev.u5:=HHhivprev04]
     D[,hivprev.o5:=HHhivprev514]

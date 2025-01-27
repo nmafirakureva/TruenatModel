@@ -1,15 +1,41 @@
 ## Thinking through parameters for the Truenat Model
 library(HEdtree)
 
+# the prevalence of HIV among children aged 0–14 years seeking care in healthcare facilities (2.4% (1.8-3.2%))
+# https://pubmed.ncbi.nlm.nih.gov/32559210/
+
+(p <- getAB(0.024,((3.2 - 1.8)/392)^2))
+curve(dbeta(x,p$a,p$b),from=0,to=1,n=200)
+# png(here("plots/phc.tbprev.png"), width = 800, height = 600)
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Prevalence of HIV',
+      # xlab = expression(atop("TB presumption in children", "with active TB disease")),
+      ylab = 'Density',
+      main = '')
+# dev.off()
+summary(rbeta(1000, p$a, p$b)*100)
+
+# Children aged 0 to 14 receiving ART 29 [25 - 32] from https://www.unaids.org/en/regionscountries/countries/nigeria
+(p <- getAB(0.29,((32 - 25)/392)^2))
+curve(dbeta(x,p$a,p$b),from=0,to=1,n=200)
+# png(here("plots/phc.tbprev.png"), width = 800, height = 600)
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Proportion of children aged 0 to 14 receiving ART',
+      # xlab = expression(atop("TB presumption in children", "with active TB disease")),
+      ylab = 'Density',
+      main = '')
+# dev.off()
+summary(rbeta(1000, p$a, p$b))
+
 # prevalence of true TB among children with presumptive TB @ PHC
 # 25% (15% - 40%) based on TB SPEED Decentralization https://doi.org/10.1016/j.eclinm.2024.102528
 (p <- getAB(0.25,((40 - 15)/392)^2))
 curve(dbeta(x,p$a,p$b),from=0,to=1,n=200)
 png(here("plots/phc.tbprev.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'Prevalence of true TB at PHC', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Prevalence of true TB at PHC',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -19,10 +45,10 @@ summary(rbeta(1000, p$a, p$b))
 (p <- getAB(0.50,((75 - 25)/392)^2))
 curve(dbeta(x,p$a,p$b),from=0,to=1,n=200)
 png(here("plots/dh.tbprev.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'Prevalence of true TB at DH', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Prevalence of true TB at DH',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -31,36 +57,36 @@ summary(rbeta(1000, p$a, p$b))
 # TB SPEED Decentralization assumed 90 (80-100) # https://doi.org/10.1016/j.eclinm.2024.102528
 # Xpert Ultra on stool paper used 0.896 (0.777–0.973) for Ethiopia # 10.1136/bmjopen-2021-058388
 (p <- getAB(0.90, ((80-100)^2)/392^2))
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'Initial care-seeking at PHC', 
-      ylab = 'Density', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Initial care-seeking at PHC',
+      ylab = 'Density',
       main = '')
 summary(rbeta(1000, p$a, p$b))
 
 # OR for initial care-seeking at DH-level given true TB, 0-4 years
 (p <- getLNparms(2.1,(10.1-0.1)^2/3.92^2,med=FALSE))
-curve(dlnorm(x,meanlog=p$mu,sdlog=p$sig),from=0,to=200, 
-      xlab = 'OR for initial care-seeking at DH-level given true TB (0-4 years)', 
-      ylab = 'Density', 
+curve(dlnorm(x,meanlog=p$mu,sdlog=p$sig),from=0,to=200,
+      xlab = 'OR for initial care-seeking at DH-level given true TB (0-4 years)',
+      ylab = 'Density',
       main = '')
 summary(rlnorm(1000,meanlog=p$mu,sdlog=p$sig))
 
 # OR for initial care-seeking at DH-level given true TB, 5-14 years
 (p <- getLNparms(10.8,(33.6-0.1)^2/3.92^2,med=FALSE))
-curve(dlnorm(x,meanlog=p$mu,sdlog=p$sig),from=0,to=200, 
-      xlab = 'OR for initial care-seeking at DH-level given true TB (5-14 years)', 
-      ylab = 'Density', 
+curve(dlnorm(x,meanlog=p$mu,sdlog=p$sig),from=0,to=200,
+      xlab = 'OR for initial care-seeking at DH-level given true TB (5-14 years)',
+      ylab = 'Density',
       main = '')
 summary(rlnorm(1000,meanlog=p$mu,sdlog=p$sig))
 
 # TB presumption in children with active TB disease
 # Using sensitivity:89% (95% CI 52% to 98%) based on https://doi.org/10.1002/14651858.CD013693.pub2
-(p <- getAB(0.89, ((98-60)^2)/392^2))  
+(p <- getAB(0.89, ((98-60)^2)/392^2))
 png(here("plots/TB presumption.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'TB presumption in children with active TB disease', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'TB presumption in children with active TB disease',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -69,10 +95,10 @@ summary(rbeta(1000, p$a, p$b))
 # Using specificity: 69% (95% CI 51% to 83%) based on https://doi.org/10.1002/14651858.CD013693.pub2
 (p <- getAB(0.31, ((49-17)^2)/392^2))
 png(here("plots/TB presumption no TB.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'TB presumption in children with no TB disease', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'TB presumption in children with no TB disease',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -81,23 +107,23 @@ summary(rbeta(1000, p$a, p$b))
 PD2 <- setDT(PD2)
 summary(PD2[,dh.presumed/phc.presumed]) # Presumptive TB in IHVN data
 
-## Bacteriological testing: 
+## Bacteriological testing:
 # facilities with access to bacteriological testing * Xpert/Truenat availability * sample possibility
 
-## Bacteriological test availability (defined as the proportion of facilities 
+## Bacteriological test availability (defined as the proportion of facilities
 # with access to bacteriological testing)
 # using Odume et al., 2023 to approximate this
-# Plot in Odume et al., 2023 suggests 
+# Plot in Odume et al., 2023 suggests
 # 0-10%? availability of Xpert Ultra in PHC
 # ~20-100% availability of Xpert Ultra in DH
 
 # DH
 (p <- getAB(0.70, ((50-100)^2)/392^2))
 png(here("plots/DH_testing.png.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'Facilities with bacteriological testing (DH)', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Facilities with bacteriological testing (DH)',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -107,10 +133,10 @@ summary(rbeta(1000, p$a, p$b))
 # to approximate a low coverage of Xpert Ultra @ PHC e.g. 5% (0-10%)
 (p <- getAB(0.05, ((0-10)^2)/392^2))
 png(here("plots/PHC_testing.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'Facilities with bacteriological testing (DH)', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Facilities with bacteriological testing (DH)',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -121,15 +147,15 @@ summary(rbeta(1000, p$a, p$b))
 # But could just assume 100% coverage
 (p <- getAB(0.60, ((20-100)^2)/392^2))
 png(here("plots/PHC_Truenat_testing.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'Truenat coverage at PHC (Intervention)', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Truenat coverage at PHC (Intervention)',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
 
-# Type of test available (in facilities with access to bacteriological testing, 
+# Type of test available (in facilities with access to bacteriological testing,
 # the proportion of tests done on Xpert/Truenat)
 # Currently set to depend on Xpert availability
 # TODO:think of a better way to model this
@@ -143,10 +169,10 @@ summary(rbeta(1000, p$a, p$b))
 # DH 5-14 years: 0.291 (0.215 - 0.375) based on TB SPEED Decent https://doi.org/10.1016/j.eclinm.2024.102528
 (p <- getAB(0.291,((21.5 - 37.5)/392)^2))
 png(here("plots/DH_SPO.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
       xlab = 'Sputum possibility (5-14 year) at DH',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -154,10 +180,10 @@ summary(rbeta(1000, p$a, p$b))
 # DH 0-4 years: 0.024 (0.020 - 0.027) based on Xpert Ultra on stool paper 10.1136/bmjopen-2021-058388
 (p <- getAB(0.024,((2.0 - 2.7)/392)^2))
 png(here("plots/DH_SPY.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
       xlab = 'Sputum possibility (0-4 year) at DH',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -165,10 +191,10 @@ summary(rbeta(1000, p$a, p$b))
 # PHC 5-14 years: 0.092 (0.063 - 0.129 based on TB SPEED Decent https://doi.org/10.1016/j.eclinm.2024.102528
 (p <- getAB(0.092,((6.3 - 12.9)/392)^2))
 png(here("plots/PHC_SPO.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
       xlab = 'Sputum possibility (5-14 year) at PHC',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -176,10 +202,10 @@ summary(rbeta(1000, p$a, p$b))
 # PHC 0-4 years: 0.024 (0.020 - 0.027) based on Xpert Ultra on stool paper 10.1136/bmjopen-2021-058388
 (p <- getAB(0.024,((2.0 - 2.7)/392)^2))
 png(here("plots/PHC_SPY.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
       xlab = 'Sputum possibility (0-4 year) at PHC',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -189,10 +215,10 @@ summary(rbeta(1000, p$a, p$b))
 # Using 75.3% (95% CI 64.3 to 83.8) based on Kay et al., 2022 (PMID: 36065889)
 (p <- getAB(0.753, ((64.3-83.8)^2)/392^2))
 png(here("plots/Xpert_sens.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
       xlab = 'Sensitivity (Xpert Ultra on respiratory samples)',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -202,10 +228,10 @@ summary(rbeta(1000, p$a, p$b))
 (p <- getAB(0.971, ((94.7-98.5)^2)/392^2))
 curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
 png(here("plots/Xpert_speci.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
       xlab = 'Specificity (Xpert Ultra on respiratory samples)',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -215,10 +241,10 @@ summary(rbeta(1000, p$a, p$b))
 (p <- getAB(0.571, ((48.0-65.9)^2)/392^2))
 curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
 png(here("plots/Truenat_sens.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
       xlab = 'Sensitivity (Truenat on sputum samples)',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -228,36 +254,36 @@ summary(rbeta(1000, p$a, p$b))
 (p <- getAB(0.92, ((89.2-94.2)^2)/392^2))
 curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
 png(here("plots/Truenat_speci.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
       xlab = 'Specificity (Truenat on sputum samples)',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
 
 # Sensitivity of clinical diagnosis
 # Using 0.627 (0.615 - 0.639) based on Marais et al. 2006
-(p <- getAB(0.627, ((61.5-65.9)^2)/392^2))
+(p <- getAB(0.627, ((66.1-59.2)^2)/392^2))
 curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
 png(here("plots/Clinical_sens.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
       xlab = 'Specificity (Clinical diagnosis)',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
 
 # Specificity of clinical diagnosis
 # Using 0.901 (0.894 - 0.908) based on Marais et al. 2006
-(p <- getAB(0.901, ((89.4-90.8)^2)/392^2))
+(p <- getAB(0.901, ((92.1-87.8)^2)/392^2))
 curve(dbeta(x, p$a, p$b), from=0, to=1, n=200)
 png(here("plots/Clinical_speci.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
       xlab = 'Specificity (Clinical diagnosis)',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -267,10 +293,10 @@ summary(rbeta(1000, p$a, p$b))
 # Assuming ~30% based on previous analyses
 (p <- getAB(0.3, ((0-50)^2)/392^2))
 png(here("plots/rltfu.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'Hospital referral loss to follow-up', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Hospital referral loss to follow-up',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -279,10 +305,10 @@ summary(rbeta(1000, p$a, p$b))
 # Assuming ~20% based on previous analyses
 (p <- getAB(0.2, ((0-50)^2)/392^2))
 png(here("plots/ltfu7d.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'Reassessment at 7 days loss to follow-up', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Reassessment at 7 days loss to follow-up',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -301,10 +327,10 @@ curve(dbeta(x,p$a,p$b),from=0,to=1,n=200)
 (p <- getAB(0.05,((0 - 8)/392)^2))
 curve(dbeta(x,p$a,p$b),from=0,to=1,n=200)
 png(here("plots/ptltfu.png"), width = 800, height = 600)
-curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200, 
-      xlab = 'Pre-treatment loss to follow-up', 
+curve(dbeta(x, p$a, p$b), from = 0, to = 1, n = 200,
+      xlab = 'Pre-treatment loss to follow-up',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rbeta(1000, p$a, p$b))
@@ -316,10 +342,10 @@ summary(rbeta(1000, p$a, p$b))
 (p <- getLNparms(0.019,((2.9 - 1.2)/392)^2))
 curve(dlnorm(x,p$mu,p$sig),from=0,to=1,n=200)
 png(here("plots/cfrontxY.png"), width = 800, height = 600)
-curve(dlnorm(x, -3.96, 0.64), from = 0, to = 1, n = 200, 
-      xlab = 'CFR children <5 on TB treatment', 
+curve(dlnorm(x, -3.96, 0.64), from = 0, to = 1, n = 200,
+      xlab = 'CFR children <5 on TB treatment',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rlnorm(1000, p$mu, p$sig))
@@ -328,10 +354,10 @@ summary(rlnorm(1000, p$mu, p$sig))
 (p <- getLNparms(0.436,((46 - 41.3)/392)^2))
 curve(dlnorm(x,p$mu,p$sig),from=0,to=1,n=200)
 png(here("plots/cfrnotxY.png"), width = 800, height = 600)
-curve(dlnorm(x, -0.83, 0.08), from = 0, to = 1, n = 200, 
-      xlab = 'CFR children <5 without TB treatment', 
+curve(dlnorm(x, -0.83, 0.08), from = 0, to = 1, n = 200,
+      xlab = 'CFR children <5 without TB treatment',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rlnorm(1000, p$mu, p$sig))
@@ -340,22 +366,22 @@ summary(rlnorm(1000, p$mu, p$sig))
 (p <- getLNparms(0.008,((1.1 - 0.6)/392)^2))
 curve(dlnorm(x,p$mu,p$sig),from=0,to=1,n=200)
 png(here("plots/cfrontxO.png"), width = 800, height = 600)
-curve(dlnorm(x, -4.82, 0.48), from = 0, to = 1, n = 200, 
-      xlab = 'CFR children 5-14 on TB treatment', 
+curve(dlnorm(x, -4.82, 0.48), from = 0, to = 1, n = 200,
+      xlab = 'CFR children 5-14 on TB treatment',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rlnorm(1000, p$mu, p$sig))
 
-# 5-14 years without treatment: 0.149 (0.137 - 0.162) 
+# 5-14 years without treatment: 0.149 (0.137 - 0.162)
 (p <- getLNparms(0.149,((16.2 - 13.7)/392)^2))
 curve(dlnorm(x,p$mu,p$sig),from=0,to=1,n=200)
 png(here("plots/cfrnotxO.png"), width = 800, height = 600)
-curve(dlnorm(x, -1.90, 0.12), from = 0, to = 1, n = 200, 
-      xlab = 'CFR children 5-14 without TB treatment', 
+curve(dlnorm(x, -1.90, 0.12), from = 0, to = 1, n = 200,
+      xlab = 'CFR children 5-14 without TB treatment',
       # xlab = expression(atop("TB presumption in children", "with active TB disease")),
-      ylab = 'Density', 
+      ylab = 'Density',
       main = '')
 dev.off()
 summary(rlnorm(1000, p$mu, p$sig))

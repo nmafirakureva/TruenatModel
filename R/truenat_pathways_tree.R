@@ -74,7 +74,7 @@ AddOutcomes <- function(D){
   ## === cost and probs (defaults)
   D$Set(p=1)
   D$Set(cost=0)
-  
+
   ## === merge to create final tree ===
   MergeByName(D,notbtxo,'No TB diagnosed',leavesonly = TRUE) #NOTE need to restrict to leaves, although not necessary
   MergeByName(D,notbtxo,'Does not reach hospital',leavesonly = TRUE) #NOTE need to restrict to leaves, although not necessary
@@ -84,24 +84,24 @@ AddOutcomes <- function(D){
   MergeByName(D,tbtxc,'TB diagnosed (clinical)')
   MergeByName(D,notbtxo,'Not screened',leavesonly = TRUE)
   MergeByName(D,notbtxo,'Not presumptive TB',leavesonly = TRUE)
-  
+
   ## ===========  other counters
   ## check
   D$Set(check=1)
   D$Set(check=0,filterFun=function(x) length(x$children)>0)
-  
+
   ## deaths
   D$Set(deaths=0)
   D$Set(deaths=1,filterFun=function(x) (x$name=='Dies'))
-  
+
   ## lives
   D$Set(lives=0)
   D$Set(lives=1,filterFun=function(x) (x$name=='Survives'))
-  
+
   ## dx clinical
   D$Set(dxc=0)
   D$Set(dxc=1,filterFun=function(x) x$name=='TB diagnosed (clinical)')
-  
+
   ## dx bac
   D$Set(dxb=0)
   D$Set(dxb=1,
@@ -110,11 +110,11 @@ AddOutcomes <- function(D){
   D$Set(att=0)
   D$Set(att=1,
         filterFun=function(x)x$name %in% c('RifS-TB treatment','RifR-TB treatment'))
-  
+
   ## referrals
   D$Set(refers=0)
   D$Set(refers=1,filterFun=function(x) grepl('Refer',x$name))
-  
+
   return(D)
 }
 
@@ -336,6 +336,11 @@ round(SOC.F$checkfun(A)) #NOTE OK
 # plotter(INT)
 # ## full graph out
 # DiagrammeR::export_graph(ToDiagrammeRGraph(SOC),
-#                          file_name=here('plots/SOC.pdf'))
+#                          file_name=here('plots/SOC27.pdf'))
+# plotter(SOC$`Present at PHC`$`TB screening`$`Presumptive TB at PHC`)
+# plotter(SOC$`Present at PHC`$`TB screening`$`Presumptive TB at PHC`$`Clinical exam only`)
+# plotter(SOC$`Present at PHC`$`TB screening`$`Presumptive TB at PHC`$`Clinical exam + TrueNat`)
+# plotter(SOC$`Present at PHC`$`TB screening`$`Presumptive TB at PHC`$`Clinical exam + Xpert Ultra`)
+
 # DiagrammeR::export_graph(ToDiagrammeRGraph(INT),
 #                          file_name=here('plots/INT.pdf'))
